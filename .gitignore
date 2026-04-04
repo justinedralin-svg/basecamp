@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+client/node_modules/
+
+# Stale root-level client files (source lives in client/src/)
+client/App.jsx
+client/main.jsx
+client/components/
+
+# Mac-generated lock file — let Render generate fresh on Linux
+client/package-lock.json
+
+# Build output
+client/dist/
+
+# Environment — never commit your API key
+.env
+.env.local
+.env.*.local
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Logs
+npm-debug.log*
+*.log
