@@ -26,6 +26,38 @@ function parseCoords(coordStr) {
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+// Dog heat risk — dogs can't sweat, they pant, making them far more vulnerable than humans
+function dogHeatRisk(highF) {
+  if (highF >= 95) return {
+    level: 'danger',
+    color: '#b91c1c',
+    bg: 'rgba(185,28,28,0.06)',
+    border: 'rgba(185,28,28,0.25)',
+    icon: '🚨',
+    label: 'Danger',
+    message: `Highs of ${highF}°F — serious heatstroke risk for dogs. Avoid strenuous activity, keep them in shade, and have cold water ready at all times.`,
+  };
+  if (highF >= 85) return {
+    level: 'warning',
+    color: '#b45309',
+    bg: 'rgba(180,83,9,0.06)',
+    border: 'rgba(180,83,9,0.25)',
+    icon: '⚠️',
+    label: 'Hot',
+    message: `Highs of ${highF}°F — limit exercise to early morning or evening. Bring extra water and watch for heavy panting, drooling, or stumbling.`,
+  };
+  if (highF >= 75) return {
+    level: 'caution',
+    color: '#92620a',
+    bg: 'rgba(146,98,10,0.06)',
+    border: 'rgba(146,98,10,0.20)',
+    icon: '🌡️',
+    label: 'Warm',
+    message: `Highs of ${highF}°F — warm conditions for dogs. Keep water handy and watch brachycephalic breeds (pugs, bulldogs) closely.`,
+  };
+  return null;
+}
+
 export default function WeatherStrip({ coordinates, tripDates, destination, weatherPrefs }) {
   const [weather, setWeather] = useState(null);
   const [tripStart, setTripStart] = useState(null);
@@ -92,6 +124,7 @@ export default function WeatherStrip({ coordinates, tripDates, destination, weat
       {weather && (() => {
         // Collect violations in a first pass
         const dayViolations = [];
+        let maxTripHighF = null;
         weather.time.forEach((dateStr, i) => {
           const isTripDay = tripStart && tripEnd && dateStr >= tripStart && dateStr <= tripEnd;
           if (!isTripDay) return;
@@ -106,7 +139,10 @@ export default function WeatherStrip({ coordinates, tripDates, destination, weat
           if (low < coldThreshold) dayViolations.push(`${day}: low ${low}°F`);
           if (high > hotThreshold) dayViolations.push(`${day}: high ${high}°F`);
           if (wind >= windThreshold) dayViolations.push(`${day}: ${wind}mph winds`);
+          if (maxTripHighF === null || high > maxTripHighF) maxTripHighF = high;
         });
+
+        const heatRisk = maxTripHighF !== null ? dogHeatRisk(maxTripHighF) : null;
 
         return (
           <>
@@ -193,6 +229,29 @@ export default function WeatherStrip({ coordinates, tripDates, destination, weat
                 );
               })}
             </div>
+
+            {/* Dog heat warning banner */}
+            {heatRisk && (
+              <div style={{
+                marginTop: 12,
+                background: heatRisk.bg,
+                border: `1px solid ${heatRisk.border}`,
+                borderRadius: 8,
+                padding: '10px 14px',
+              }}>
+                <div style={{ color: heatRisk.color, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
+                  {heatRisk.icon} Dog heat {heatRisk.label}
+                </div>
+                <div style={{ color: '#6b5c42', fontSize: 12, lineHeight: 1.5 }}>
+                  {heatRisk.message}
+                </div>
+                {heatRisk.level === 'danger' && (
+                  <div style={{ color: '#b91c1c', fontSize: 11, marginTop: 6, fontWeight: 500 }}>
+                    Signs of heatstroke: excessive panting, drooling, vomiting, collapse. Cool with water immediately and find a vet.
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Violation banner — shown when trip days conflict with user's preferences */}
             {dayViolations.length > 0 && (
