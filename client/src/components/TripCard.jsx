@@ -8,7 +8,8 @@ function Stars({ rating }) {
 }
 
 export default function TripCard({ entry, onClick, onMarkDone, onDelete, compact }) {
-  const { trip, date, status, notes, rating, photos } = entry;
+  const { trip, date, status, notes, rating, photos, conditionReport } = entry;
+  const hasReport = conditionReport && (conditionReport.trailCondition || conditionReport.cleanliness || conditionReport.packedOut !== undefined);
   const formattedDate = new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const coverPhoto = photos?.[0];
 
@@ -60,6 +61,7 @@ export default function TripCard({ entry, onClick, onMarkDone, onDelete, compact
             {trip?.driveTime && <Chip>🚗 {trip.driveTime}</Chip>}
             {trip?.dogReport?.rating && <Chip>🐕 {trip.dogReport.rating}</Chip>}
             {notes && notes.trim().length > 0 && <Chip>📓 Notes</Chip>}
+            {hasReport && <Chip>🌿 LNT filed</Chip>}
             {rating > 0 && <Stars rating={rating} />}
             <Chip muted>{formattedDate}</Chip>
           </div>

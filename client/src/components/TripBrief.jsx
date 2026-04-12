@@ -213,6 +213,18 @@ export function printTripBrief(entry) {
     </div>
   </div>` : ''}
 
+  <!-- LNT Principles -->
+  <div class="section-full" style="margin-top:10px; border-top: 1px solid #d8cfa8; padding-top:10px;">
+    <div class="box-label" style="margin-bottom:6px">🌿 Leave No Trace reminders</div>
+    <div class="pack-grid">
+      ${['Pack out ALL trash including micro-trash', 'Leave the campsite better than you found it', 'Keep dogs leashed in required areas', 'Proper waste disposal (cat holes or pack out)', 'Respect wildlife — no chasing or feeding', 'Stay on designated trails and campsites'].map(tip => `
+      <div class="pack-item">
+        <div class="checkbox"></div>
+        <span class="pack-text" style="color:#5c7a3e">${tip}</span>
+      </div>`).join('')}
+    </div>
+  </div>
+
   <!-- Footer -->
   <div class="footer">
     <span>⛺ Base Camp · basecamp.app</span>

@@ -4,6 +4,7 @@ import ReplanModal from './ReplanModal.jsx';
 import PhotoSection from './PhotoSection.jsx';
 import PackingChecklist from './PackingChecklist.jsx';
 import { printTripBrief } from './TripBrief.jsx';
+import ConditionReport from './ConditionReport.jsx';
 
 function parseCoords(str) {
   if (!str) return null;
@@ -91,7 +92,7 @@ function StarRating({ rating, onRate }) {
   );
 }
 
-export default function TripDetail({ entry, onBack, onMarkDone, onMarkPlanned, onDelete, onUpdateNotes, onUpdatePhotos, onUpdateChecklist, onReplan, onRate }) {
+export default function TripDetail({ entry, onBack, onMarkDone, onMarkPlanned, onDelete, onUpdateNotes, onUpdatePhotos, onUpdateChecklist, onUpdateConditionReport, onReplan, onRate }) {
   const [notes, setNotes] = useState(entry.notes || '');
   const [saved, setSaved] = useState(false);
   const [showReplan, setShowReplan] = useState(false);
@@ -211,6 +212,14 @@ export default function TripDetail({ entry, onBack, onMarkDone, onMarkPlanned, o
             onRate={rating => onRate && onRate(entry.id, rating)}
           />
         </div>
+      )}
+
+      {/* Condition report — shown for done trips */}
+      {entry.status === 'done' && (
+        <ConditionReport
+          report={entry.conditionReport || {}}
+          onChange={report => onUpdateConditionReport && onUpdateConditionReport(entry.id, report)}
+        />
       )}
 
       {/* Actions */}

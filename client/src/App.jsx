@@ -114,6 +114,13 @@ export default function App() {
     setCurrentTrip(prev => prev?.id === id ? { ...prev, checkedItems } : prev);
   }
 
+  function handleUpdateConditionReport(id, conditionReport) {
+    setTrips(prev =>
+      prev.map(t => t.id === id ? { ...t, conditionReport } : t)
+    );
+    setCurrentTrip(prev => prev?.id === id ? { ...prev, conditionReport } : prev);
+  }
+
   function handleReplan(tripOrConstraints, constraintsArg) {
     if (constraintsArg !== undefined) {
       // Called from ReplanModal with a freshly generated trip
@@ -204,6 +211,7 @@ export default function App() {
             onUpdateNotes={handleUpdateNotes}
             onUpdatePhotos={handleUpdatePhotos}
             onUpdateChecklist={handleUpdateChecklist}
+            onUpdateConditionReport={handleUpdateConditionReport}
             onReplan={handleReplan}
             onRate={handleRateTrip}
           />
