@@ -139,6 +139,14 @@
       .hero-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
       .hero-actions { display: flex; gap: 8px; flex-shrink: 0; align-items: center; }
 
+      /* Nav logo: show full name on desktop, short name on mobile */
+      .nav-logo-short { display: none; }
+      .nav-logo-full { display: inline; }
+      @media (max-width: 480px) {
+        .nav-logo-short { display: inline; }
+        .nav-logo-full { display: none; }
+      }
+
       @media (max-width: 600px) {
         main { padding: 16px 14px 80px !important; }
         .grid-2 { grid-template-columns: 1fr; }

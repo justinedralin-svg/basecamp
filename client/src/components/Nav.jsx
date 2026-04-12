@@ -13,8 +13,12 @@ export default function Nav({ view, onNav, tripCount, hasProfile, dogName }) {
           style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
         >
           <span style={{ fontSize: 20 }}>🐾</span>
-          <span style={{ color: '#f2ede0', fontWeight: 700, fontSize: 16, letterSpacing: '-0.3px' }}>
+          {/* Full name on desktop, short name on mobile */}
+          <span className="nav-logo-full" style={{ color: '#f2ede0', fontWeight: 700, fontSize: 16, letterSpacing: '-0.3px' }}>
             {dogName ? `Camp With ${dogName}` : 'Camp With My Dog'}
+          </span>
+          <span className="nav-logo-short" style={{ color: '#f2ede0', fontWeight: 700, fontSize: 16, letterSpacing: '-0.3px' }}>
+            {dogName || 'CWMD'}
           </span>
         </button>
 
