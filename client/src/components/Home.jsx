@@ -1,13 +1,16 @@
 import TripCard from './TripCard.jsx';
+import { getDogName, getDogNames } from '../utils/profile.js';
 
 export default function Home({ trips, onStartPlan, onViewLog, onViewTrip }) {
   const recent = trips.slice(0, 3);
+  const dogName = getDogName(null);
+  const dogNames = getDogNames(null);
 
   return (
     <div className="fade-in">
       {/* Hero */}
       <div style={{ padding: '48px 0 40px', textAlign: 'center' }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>⛺</div>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>🐾</div>
         <h1 style={{
           color: '#2c2416',
           fontSize: 36,
@@ -16,19 +19,20 @@ export default function Home({ trips, onStartPlan, onViewLog, onViewTrip }) {
           marginBottom: 12,
           lineHeight: 1.2,
         }}>
-          Is this trip going to<br />
-          <span style={{ color: '#5c7a3e' }}>actually work?</span>
+          {dogName ? `Is this trip right for ${dogName}?` : 'Is this trip going to'}{!dogName && <><br /><span style={{ color: '#5c7a3e' }}>actually work?</span></>}
+          {dogName && <><br /><span style={{ color: '#5c7a3e' }}>Let's find out.</span></>}
         </h1>
         <p style={{ color: '#9c8b6e', fontSize: 16, maxWidth: 440, margin: '0 auto 32px', lineHeight: 1.6 }}>
-          Tell us your rig, your dogs, and what you're after.
-          Get a trip that actually fits — not just a list of campgrounds.
+          {dogNames
+            ? `Plan a dog-friendly camping trip for you and ${dogNames}. Safety info, maps, packing list — all in one place.`
+            : 'Tell us your rig, your dogs, and what you\'re after. Get a trip that actually fits — not just a list of campgrounds.'}
         </p>
         <button
           onClick={onStartPlan}
           className="btn-primary"
           style={{ padding: '14px 32px', fontSize: 16 }}
         >
-          Plan a Trip
+          {dogName ? `Plan a trip with ${dogName} →` : 'Plan a Trip'}
         </button>
       </div>
 
@@ -70,7 +74,11 @@ export default function Home({ trips, onStartPlan, onViewLog, onViewTrip }) {
       {trips.length === 0 && (
         <div className="card" style={{ padding: 32, textAlign: 'center', marginTop: 8 }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>🗺️</div>
-          <div style={{ color: '#9c8b6e', fontSize: 15 }}>Your trip log is empty. Plan your first trip above.</div>
+          <div style={{ color: '#9c8b6e', fontSize: 15 }}>
+            {dogName
+              ? `No trips yet. Time to find somewhere ${dogName} will love.`
+              : 'Your trip log is empty. Plan your first trip above.'}
+          </div>
         </div>
       )}
     </div>

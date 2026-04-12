@@ -48,17 +48,23 @@ function buildInitialForm(prefill) {
   return { ...DEFAULT_FORM, ...profileDefaults, ...(prefill || {}) };
 }
 
-const LOADING_MESSAGES = [
-  'Sniffing out the perfect spot…',
-  'Checking fire danger and weather…',
-  'Finding dog-friendly trails nearby…',
-  'Consulting the paw oracle…',
-  'Scouting dispersed sites off the beaten path…',
-  'Making sure there\'s a swimming hole…',
-  'Checking if Keybo will approve…',
-];
+import { getDogName } from '../utils/profile.js';
+
+function getLoadingMessages() {
+  const name = getDogName(null);
+  return [
+    'Sniffing out the perfect spot…',
+    'Checking fire danger and weather…',
+    'Finding dog-friendly trails nearby…',
+    'Consulting the paw oracle…',
+    'Scouting dispersed sites off the beaten path…',
+    'Making sure there\'s a swimming hole…',
+    name ? `Checking if ${name} will approve…` : 'Checking if your pup will approve…',
+  ];
+}
 
 export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }) {
+  const LOADING_MESSAGES = getLoadingMessages();
   const [loading, setLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState(LOADING_MESSAGES[0]);
   const [error, setError] = useState(null);

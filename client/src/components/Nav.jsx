@@ -1,4 +1,7 @@
+import { getDogName } from '../utils/profile.js';
+
 export default function Nav({ view, onNav, tripCount, hasProfile }) {
+  const dogName = getDogName(null);
   return (
     <nav style={{
       position: 'sticky', top: 0, zIndex: 50,
@@ -14,7 +17,7 @@ export default function Nav({ view, onNav, tripCount, hasProfile }) {
         >
           <span style={{ fontSize: 20 }}>🐾</span>
           <span style={{ color: '#f2ede0', fontWeight: 700, fontSize: 16, letterSpacing: '-0.3px' }}>
-            Camp With My Dog
+            {dogName ? `Camp With ${dogName}` : 'Camp With My Dog'}
           </span>
         </button>
 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import MapPin from './MapPin.jsx';
 import WeatherStrip from './WeatherStrip.jsx';
 import SafetySection from './SafetySection.jsx';
+import { getDogNames } from '../utils/profile.js';
 
 function buildShareUrl(trip) {
   // unescape + encodeURIComponent makes btoa safe for Unicode characters
@@ -137,7 +138,7 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
 
       {/* Dog report — prominent */}
       {trip.dogReport && (
-        <Section icon="🐕" title="Dog report">
+        <Section icon="🐕" title={`${getDogNames('Dog')} report`}>
           <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ color: '#6b5c42', fontSize: 13 }}>Overall</span>
             <RatingPill rating={trip.dogReport.rating} />
