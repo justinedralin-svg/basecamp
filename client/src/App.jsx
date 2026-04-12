@@ -179,6 +179,7 @@ export default function App() {
             onStartPlan={() => nav('plan')}
             onViewLog={() => nav('log')}
             onViewTrip={handleViewTrip}
+            onNavProfile={() => nav('profile')}
             dogName={dogName}
             dogNames={dogNames}
           />
