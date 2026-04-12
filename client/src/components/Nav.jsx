@@ -1,7 +1,4 @@
-import { getDogName } from '../utils/profile.js';
-
-export default function Nav({ view, onNav, tripCount, hasProfile }) {
-  const dogName = getDogName(null);
+export default function Nav({ view, onNav, tripCount, hasProfile, dogName }) {
   return (
     <nav style={{
       position: 'sticky', top: 0, zIndex: 50,

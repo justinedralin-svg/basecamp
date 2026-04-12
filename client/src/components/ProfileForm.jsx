@@ -27,7 +27,7 @@ const EMPTY_PROFILE = {
   dogs: [{ name: '', breed: '', size: 'Large (60–100 lbs)' }],
 };
 
-export default function ProfileForm({ onBack }) {
+export default function ProfileForm({ onBack, onSaved }) {
   const existing = loadProfile();
   const [form, setForm] = useState(existing || { ...EMPTY_PROFILE });
   const [saved, setSaved] = useState(false);
@@ -57,6 +57,7 @@ export default function ProfileForm({ onBack }) {
   function handleSave() {
     localStorage.setItem(PROFILE_KEY, JSON.stringify(form));
     setSaved(true);
+    onSaved && onSaved();
   }
 
   function handleClear() {

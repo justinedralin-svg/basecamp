@@ -8,6 +8,7 @@ import TripDetail from './components/TripDetail.jsx';
 import SharedTrip from './components/SharedTrip.jsx';
 import ProfileForm from './components/ProfileForm.jsx';
 import TripStats from './components/TripStats.jsx';
+import { getDogName, getDogNames } from './utils/profile.js';
 
 function getSharedTrip() {
   try {
@@ -41,10 +42,17 @@ export default function App() {
   const [currentTrip, setCurrentTrip] = useState(null); // { trip, constraints, id, date, status }
   const [selectedTripId, setSelectedTripId] = useState(null);
   const [prefillConstraints, setPrefillConstraints] = useState(null);
+  const [dogName, setDogName] = useState(() => getDogName(null));
+  const [dogNames, setDogNames] = useState(() => getDogNames(null));
 
   useEffect(() => {
     saveTrips(trips);
   }, [trips]);
+
+  function handleProfileSaved() {
+    setDogName(getDogName(null));
+    setDogNames(getDogNames(null));
+  }
 
   function handlePlanComplete(trip, constraints) {
     const newEntry = {
@@ -161,6 +169,7 @@ export default function App() {
         onNav={nav}
         tripCount={trips.length}
         hasProfile={!!localStorage.getItem('basecamp_profile')}
+        dogName={dogName}
       />
 
       <main style={{ maxWidth: 760, margin: '0 auto', padding: '24px 20px 80px' }}>
@@ -170,6 +179,8 @@ export default function App() {
             onStartPlan={() => nav('plan')}
             onViewLog={() => nav('log')}
             onViewTrip={handleViewTrip}
+            dogName={dogName}
+            dogNames={dogNames}
           />
         )}
 
@@ -222,7 +233,7 @@ export default function App() {
         )}
 
         {view === 'profile' && (
-          <ProfileForm onBack={() => nav(view === 'profile' ? 'home' : view)} />
+          <ProfileForm onBack={() => nav(view === 'profile' ? 'home' : view)} onSaved={handleProfileSaved} />
         )}
 
         {view === 'shared' && (

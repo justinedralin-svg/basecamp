@@ -1,10 +1,6 @@
 import TripCard from './TripCard.jsx';
-import { getDogName, getDogNames } from '../utils/profile.js';
-
-export default function Home({ trips, onStartPlan, onViewLog, onViewTrip }) {
+export default function Home({ trips, onStartPlan, onViewLog, onViewTrip, dogName, dogNames }) {
   const recent = trips.slice(0, 3);
-  const dogName = getDogName(null);
-  const dogNames = getDogNames(null);
 
   return (
     <div className="fade-in">

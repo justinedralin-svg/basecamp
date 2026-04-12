@@ -138,7 +138,7 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
 
       {/* Dog report — prominent */}
       {trip.dogReport && (
-        <Section icon="🐕" title={`${getDogNames('Dog')} report`}>
+        <Section icon="🐕" title={`${getDogNames('Dog')}'s report`}>
           <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ color: '#6b5c42', fontSize: 13 }}>Overall</span>
             <RatingPill rating={trip.dogReport.rating} />
