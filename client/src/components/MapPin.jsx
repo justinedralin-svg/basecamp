@@ -91,9 +91,9 @@ export default function MapPin({ coordinates, destination, campsiteName }) {
   const blmRef = useRef(null);
   const mvumRef = useRef(null);
 
-  const [basemap, setBasemap] = useState('satellite');
+  const [basemap, setBasemap] = useState('topo');
   const [blmOn, setBlmOn] = useState(true);
-  const [mvumOn, setMvumOn] = useState(false);
+  const [mvumOn, setMvumOn] = useState(true);
 
   const [resolvedCoords, setResolvedCoords] = useState(null);
   const [coordSource, setCoordSource] = useState(null);
