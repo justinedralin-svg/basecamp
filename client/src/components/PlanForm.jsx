@@ -48,8 +48,19 @@ function buildInitialForm(prefill) {
   return { ...DEFAULT_FORM, ...profileDefaults, ...(prefill || {}) };
 }
 
+const LOADING_MESSAGES = [
+  'Sniffing out the perfect spot…',
+  'Checking fire danger and weather…',
+  'Finding dog-friendly trails nearby…',
+  'Consulting the paw oracle…',
+  'Scouting dispersed sites off the beaten path…',
+  'Making sure there\'s a swimming hole…',
+  'Checking if Keybo will approve…',
+];
+
 export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }) {
   const [loading, setLoading] = useState(false);
+  const [loadingMsg, setLoadingMsg] = useState(LOADING_MESSAGES[0]);
   const [error, setError] = useState(null);
   const profile = loadProfile();
   const [form, setForm] = useState(() => buildInitialForm(prefill));
@@ -95,6 +106,14 @@ export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }
     e.preventDefault();
     setError(null);
     setLoading(true);
+    setLoadingMsg(LOADING_MESSAGES[0]);
+
+    // Rotate through fun loading messages every 2.5 seconds
+    let msgIndex = 1;
+    const msgInterval = setInterval(() => {
+      setLoadingMsg(LOADING_MESSAGES[msgIndex % LOADING_MESSAGES.length]);
+      msgIndex++;
+    }, 2500);
 
     const constraints = {
       ...form,
@@ -118,6 +137,7 @@ export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }
     } catch (err) {
       setError(err.message);
     } finally {
+      clearInterval(msgInterval);
       setLoading(false);
     }
   }
@@ -434,10 +454,10 @@ export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }
           {loading ? (
             <>
               <div className="spinner" />
-              Finding your trip...
+              {loadingMsg}
             </>
           ) : (
-            'Find my trip →'
+            '🐾 Find our next adventure →'
           )}
         </button>
       </form>
