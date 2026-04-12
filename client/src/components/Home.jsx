@@ -20,7 +20,7 @@ export default function Home({ trips, onStartPlan, onViewLog, onViewTrip }) {
           <span style={{ color: '#5c7a3e' }}>actually work?</span>
         </h1>
         <p style={{ color: '#9c8b6e', fontSize: 16, maxWidth: 440, margin: '0 auto 32px', lineHeight: 1.6 }}>
-          Tell Base Camp your rig, your dogs, and what you're after.
+          Tell us your rig, your dogs, and what you're after.
           Get a trip that actually fits — not just a list of campgrounds.
         </p>
         <button

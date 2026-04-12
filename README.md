@@ -1,6 +1,8 @@
-# ⛺ Base Camp
+# 🐾 Camp With My Dog
 
-An AI-powered trip planner for overlanders and car campers. Built for real rigs, real dogs, and real dirt roads — not just a list of campgrounds.
+An AI-powered camping trip planner built for dog owners. Find dog-friendly campsites, check fire and weather safety, pack smarter, and leave it better than you found it.
+
+🌐 [campwithmydog.com](https://campwithmydog.com)
 
 ---
 

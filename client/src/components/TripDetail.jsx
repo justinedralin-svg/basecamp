@@ -36,11 +36,11 @@ function exportGPX(entry) {
   });
 
   const gpx = `<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="Base Camp" xmlns="http://www.topografix.com/GPX/1/1"
+<gpx version="1.1" creator="Camp With My Dog" xmlns="http://www.topografix.com/GPX/1/1"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd">
   <metadata>
-    <name>${xmlEscape(trip?.destination || 'Base Camp Trip')}</name>
+    <name>${xmlEscape(trip?.destination || 'Camp With My Dog Trip')}</name>
     <desc>${xmlEscape(constraints?.location || '')}</desc>
   </metadata>
 ${wpts.map(w => `  <wpt lat="${w.lat}" lon="${w.lon}">

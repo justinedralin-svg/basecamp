@@ -12,9 +12,9 @@ export default function Nav({ view, onNav, tripCount, hasProfile }) {
           onClick={() => onNav('home')}
           style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
         >
-          <span style={{ fontSize: 20 }}>⛺</span>
+          <span style={{ fontSize: 20 }}>🐾</span>
           <span style={{ color: '#f2ede0', fontWeight: 700, fontSize: 16, letterSpacing: '-0.3px' }}>
-            Base Camp
+            Camp With My Dog
           </span>
         </button>
 

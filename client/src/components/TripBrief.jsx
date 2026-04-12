@@ -18,7 +18,7 @@ export function printTripBrief(entry) {
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>${t.destination} — Base Camp Trip Brief</title>
+  <title>${t.destination} — Camp With My Dog Trip Brief</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -124,7 +124,7 @@ export function printTripBrief(entry) {
       ${t.tagline ? `<div class="tagline">${t.tagline}</div>` : ''}
     </div>
     <div class="meta">
-      Base Camp Trip Brief<br/>
+      Camp With My Dog Trip Brief<br/>
       Printed ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}<br/>
       ${c.tripDates ? `Dates: ${c.tripDates}` : ''}
     </div>
@@ -227,7 +227,7 @@ export function printTripBrief(entry) {
 
   <!-- Footer -->
   <div class="footer">
-    <span>⛺ Base Camp · basecamp.app</span>
+    <span>🐾 Camp With My Dog · campwithmydog.com</span>
     <span>${t.campsite?.coordinates ? `📍 ${t.campsite.coordinates}` : ''}</span>
     <span>Generated ${new Date().toLocaleDateString()}</span>
   </div>

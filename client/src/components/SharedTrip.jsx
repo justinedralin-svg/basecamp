@@ -34,7 +34,7 @@ export default function SharedTrip({ trip, onPlanOwn }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span>⛺</span>
           <span style={{ color: '#5c7a3e', fontSize: 13, fontWeight: 500 }}>
-            Someone shared this Base Camp trip with you
+            Someone shared this Camp With My Dog trip with you
           </span>
         </div>
         <button onClick={onPlanOwn} className="btn-primary" style={{ padding: '8px 16px', fontSize: 13 }}>

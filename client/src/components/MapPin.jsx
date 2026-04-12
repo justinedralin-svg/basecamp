@@ -6,7 +6,7 @@ function xmlEscape(str) {
 
 function downloadGPX({ lat, lon, name }) {
   const gpx = `<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="Base Camp" xmlns="http://www.topografix.com/GPX/1/1">
+<gpx version="1.1" creator="Camp With My Dog" xmlns="http://www.topografix.com/GPX/1/1">
   <wpt lat="${lat}" lon="${lon}">
     <name>${xmlEscape(name)}</name>
     <sym>Campground</sym>
