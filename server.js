@@ -9,12 +9,14 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-const SYSTEM_PROMPT = `You are Base Camp, an AI trip planner for overlanders and car campers. You specialize in vehicle-based camping — rooftop tents, truck beds, vans, and built-out rigs.
+const SYSTEM_PROMPT = `You are Camp With My Dog, an AI trip planner for overlanders and car campers who travel with their dogs. You specialize in vehicle-based camping — rooftop tents, truck beds, vans, and built-out rigs.
 
 Your job is to generate specific, actionable trip recommendations that actually work for the person's specific situation: their rig, their dogs, their skill level, their vibe.
 
+CRITICAL: If the user tells you their dog's name and breed, USE THEM throughout your response. Say "Keybo will love the creek access — Huskies are built for cold water" not "your dog will enjoy the creek." Breed-specific advice is one of the most valuable things you can provide: Huskies overheat fast in summer, Labs love to swim, small dogs struggle on rocky terrain, etc. Make it feel personal.
+
 Unlike generic trip planners, you go deep on:
-- DOG LOGISTICS: Not just "leashes allowed" — you specify water access, shade availability, ground surface (avoid hot granite slabs in summer), toxicity concerns, elevation and heat stress for large breeds like huskies
+- DOG LOGISTICS: Not just "leashes allowed" — you specify water access, shade availability, ground surface (avoid hot granite slabs in summer), toxicity concerns, elevation and heat stress specific to the dog's breed and size
 - RIG SUITABILITY: Road conditions, clearance requirements, whether the camping spot requires technical driving or is accessible to a stock overlander
 - CURRENT CONDITIONS: Season-appropriate fire restrictions, typical road conditions for the time of year, water availability
 - REAL SPECIFICITY: Actual campsite names, specific trailheads, named roads — not vague "the area around X"
@@ -461,13 +463,21 @@ function buildUserPrompt(c) {
   if (c.hasDogs && c.dogs && c.dogs.length > 0) {
     lines.push('');
     lines.push('MY DOGS:');
+    const namedDogs = [];
     c.dogs.forEach(dog => {
       const parts = [];
       if (dog.name) parts.push(dog.name);
       if (dog.breed) parts.push(dog.breed);
       if (dog.size) parts.push(`(${dog.size})`);
       lines.push(`- ${parts.join(', ') || 'Dog'}`);
+      if (dog.name) namedDogs.push(dog.name);
     });
+    if (namedDogs.length > 0) {
+      const nameList = namedDogs.length === 1
+        ? namedDogs[0]
+        : namedDogs.slice(0, -1).join(', ') + ' and ' + namedDogs[namedDogs.length - 1];
+      lines.push(`Please refer to my dog${namedDogs.length > 1 ? 's' : ''} by name (${nameList}) throughout the trip plan — especially in the dogReport and highlights.`);
+    }
   }
 
   if (c.activities && c.activities.length > 0) {
@@ -525,13 +535,21 @@ function buildReplanPrompt(constraints, originalTrip, changeRequest) {
 
   if (constraints.hasDogs && constraints.dogs?.length > 0) {
     lines.push('MY DOGS:');
+    const namedDogs = [];
     constraints.dogs.forEach(dog => {
       const parts = [];
       if (dog.name) parts.push(dog.name);
       if (dog.breed) parts.push(dog.breed);
       if (dog.size) parts.push(`(${dog.size})`);
       lines.push(`- ${parts.join(', ') || 'Dog'}`);
+      if (dog.name) namedDogs.push(dog.name);
     });
+    if (namedDogs.length > 0) {
+      const nameList = namedDogs.length === 1
+        ? namedDogs[0]
+        : namedDogs.slice(0, -1).join(', ') + ' and ' + namedDogs[namedDogs.length - 1];
+      lines.push(`Please refer to my dog${namedDogs.length > 1 ? 's' : ''} by name (${nameList}) throughout the trip plan.`);
+    }
   }
 
   if (constraints.activities?.length > 0) lines.push(`ACTIVITIES: ${constraints.activities.join(', ')}`);
@@ -553,6 +571,6 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`\n🏕️  Base Camp server running on http://localhost:${PORT}`);
+  console.log(`\n🐾  Camp With My Dog server running on http://localhost:${PORT}`);
   console.log(`   API key: ${process.env.ANTHROPIC_API_KEY ? '✓ configured' : '✗ MISSING — add to .env'}\n`);
 });
