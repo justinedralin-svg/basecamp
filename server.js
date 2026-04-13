@@ -480,9 +480,29 @@ function buildUserPrompt(c) {
     }
   }
 
+  if (c.energyLevel) {
+    const energyDesc = {
+      chill: 'Chill — easy road, relaxed camp, low miles, nothing too intense',
+      adventurous: 'Adventurous — solid hiking, some dirt road, real scenery, moderate effort',
+      epic: 'Epic — push it, technical terrain or big miles, go somewhere not everyone gets to',
+    };
+    lines.push('');
+    lines.push(`TRIP ENERGY: ${energyDesc[c.energyLevel] || c.energyLevel}`);
+  }
+
+  if (c.campsiteType && c.campsiteType !== 'any') {
+    const campsiteDesc = {
+      dispersed: 'Strongly prefer dispersed / free camping — no established campgrounds',
+      established: 'Prefer established campgrounds with reservations over dispersed',
+    };
+    lines.push(`CAMPSITE PREFERENCE: ${campsiteDesc[c.campsiteType] || c.campsiteType}`);
+  }
+
   if (c.activities && c.activities.length > 0) {
     lines.push('');
-    lines.push(`ACTIVITIES I WANT: ${c.activities.join(', ')}`);
+    // Strip emojis from activity names for cleaner prompt
+    const cleanActivities = c.activities.map(a => a.replace(/^\S+\s/, ''));
+    lines.push(`ACTIVITIES I WANT: ${cleanActivities.join(', ')}`);
   }
 
   if (c.driveDistance) {
