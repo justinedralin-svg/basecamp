@@ -45,6 +45,44 @@ function Row({ label, value }) {
   );
 }
 
+function mapsUrl(coordString) {
+  if (!coordString) return null;
+  const match = coordString.match(/(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)/);
+  if (!match) return null;
+  const [, lat, lon] = match;
+  // Use geo: URI — opens Google Maps on Android, Apple Maps on iOS, Google Maps on desktop
+  return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&travelmode=driving`;
+}
+
+function CoordsRow({ coords }) {
+  if (!coords) return null;
+  const url = mapsUrl(coords);
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 10, marginBottom: 10, borderBottom: '1px solid #e8e0ca' }}>
+      <span style={{ color: '#9c8b6e', fontSize: 13, fontWeight: 500, flexShrink: 0, marginRight: 16 }}>Coords</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{ color: '#3d3020', fontSize: 13, fontFamily: 'monospace' }}>{coords}</span>
+        {url && (
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              background: '#5c7a3e', color: '#fff',
+              padding: '4px 10px', borderRadius: 20,
+              fontSize: 12, fontWeight: 600, textDecoration: 'none',
+              whiteSpace: 'nowrap', flexShrink: 0,
+            }}
+          >
+            🗺️ Directions
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, readOnly }) {
   const { trip, id, date, status } = entry;
   const [saved, setSaved] = useState(false);
@@ -100,7 +138,7 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
         />
         <Row label="Name" value={trip.campsite?.name} />
         <Row label="Type" value={trip.campsite?.type} />
-        {trip.campsite?.coordinates && <Row label="Coords" value={trip.campsite.coordinates} />}
+        <CoordsRow coords={trip.campsite?.coordinates} />
         {trip.campsite?.description && (
           <p style={{ color: '#3d3020', fontSize: 14, lineHeight: 1.6, margin: 0 }}>{trip.campsite.description}</p>
         )}
