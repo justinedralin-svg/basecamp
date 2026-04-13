@@ -1,20 +1,28 @@
 import { useState, useEffect } from 'react';
 
-// Compress trip JSON using deflate-like approach via URL-safe base64
-// We use a simple LZ-based compression to shorten the URL
-function compressTrip(trip) {
-  try {
-    const json = JSON.stringify(trip);
-    // Use encodeURIComponent + btoa with compression hint marker
-    const compressed = btoa(unescape(encodeURIComponent(json)));
-    return compressed;
-  } catch {
-    return btoa(unescape(encodeURIComponent(JSON.stringify(trip))));
-  }
+// Only encode the fields needed to display the shared trip — skip packing lists, alt options etc.
+function slimTrip(trip) {
+  return {
+    destination: trip.destination,
+    tagline: trip.tagline,
+    region: trip.region,
+    driveTime: trip.driveTime,
+    campsite: trip.campsite ? {
+      name: trip.campsite.name,
+      type: trip.campsite.type,
+      coordinates: trip.campsite.coordinates,
+      access: trip.campsite.access,
+    } : undefined,
+    dogReport: trip.dogReport,
+    highlights: trip.highlights,
+    watchOuts: trip.watchOuts,
+    permits: trip.permits,
+    gettingThere: trip.gettingThere,
+  };
 }
 
 export function buildShareUrl(trip) {
-  const encoded = compressTrip(trip);
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(slimTrip(trip)))));
   return `${window.location.origin}${window.location.pathname}#shared/${encoded}`;
 }
 
@@ -92,33 +100,13 @@ export default function ShareModal({ trip, onClose }) {
         </div>
 
         {/* Share options */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
-          <ShareOption icon="💬" label="Text message" desc="Send via iMessage or SMS" onClick={handleText} />
-          <ShareOption icon="📧" label="Email" desc="Share with a longer message" onClick={handleEmail} />
-          {hasNativeShare && (
-            <ShareOption icon="⬆️" label="More options" desc="WhatsApp, Instagram, AirDrop..." onClick={handleNativeShare} />
-          )}
-        </div>
-
-        {/* Copy link */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 10,
-          background: '#f0ebe0', border: '1px solid #d8cfa8',
-          borderRadius: 10, padding: '10px 14px',
-        }}>
-          <div style={{ flex: 1, overflow: 'hidden' }}>
-            <div style={{ color: '#6b5c42', fontSize: 11, fontWeight: 600, marginBottom: 2 }}>LINK</div>
-            <div style={{ color: '#9c8b6e', fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {url}
-            </div>
-          </div>
-          <button
-            onClick={handleCopy}
-            className="btn-ghost"
-            style={{ padding: '8px 14px', fontSize: 13, flexShrink: 0 }}
-          >
-            {copied ? '✓ Copied' : 'Copy'}
-          </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <ShareOption icon="💬" label="Text message" desc="iMessage or SMS" onClick={handleText} />
+          <ShareOption icon="📧" label="Email" desc="Open in mail app" onClick={handleEmail} />
+          {hasNativeShare
+            ? <ShareOption icon="⬆️" label="More options" desc="WhatsApp, AirDrop, Instagram…" onClick={handleNativeShare} />
+            : <ShareOption icon="🔗" label={copied ? '✓ Link copied!' : 'Copy link'} desc="Paste anywhere" onClick={handleCopy} />
+          }
         </div>
       </div>
     </>
