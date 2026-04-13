@@ -3,12 +3,7 @@ import MapPin from './MapPin.jsx';
 import WeatherStrip from './WeatherStrip.jsx';
 import SafetySection from './SafetySection.jsx';
 import { getDogNames } from '../utils/profile.js';
-
-function buildShareUrl(trip) {
-  // unescape + encodeURIComponent makes btoa safe for Unicode characters
-  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(trip))));
-  return `${window.location.origin}${window.location.pathname}#shared/${encoded}`;
-}
+import ShareModal from './ShareModal.jsx';
 
 function RatingPill({ rating }) {
   const colors = {
@@ -53,38 +48,19 @@ function Row({ label, value }) {
 export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, readOnly }) {
   const { trip, id, date, status } = entry;
   const [saved, setSaved] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [showShare, setShowShare] = useState(false);
 
   function handleSave() {
     onSave(entry);
     setSaved(true);
   }
 
-  async function handleShare() {
-    const url = buildShareUrl(trip);
-    const shareData = {
-      title: `${trip.destination} — Camp With My Dog`,
-      text: `Check out this dog-friendly camping trip: ${trip.destination}. ${trip.tagline || ''}`,
-      url,
-    };
-    try {
-      // Use native share sheet on mobile if available
-      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-        await navigator.share(shareData);
-      } else {
-        await navigator.clipboard.writeText(url);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2500);
-      }
-    } catch {
-      window.prompt('Copy this link to share:', url);
-    }
-  }
 
   if (!trip) return null;
 
   return (
     <div className="fade-in">
+      {showShare && <ShareModal trip={trip} onClose={() => setShowShare(false)} />}
       {/* Hero */}
       <div style={{ marginBottom: 24 }}>
         <div className="hero-row">
@@ -99,8 +75,8 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
             </div>
           </div>
           <div className="hero-actions">
-            <button onClick={handleShare} className="btn-ghost" style={{ padding: '10px 16px', fontSize: 14 }}>
-              {copied ? '✓ Copied!' : '⬆ Share'}
+            <button onClick={() => setShowShare(true)} className="btn-ghost" style={{ padding: '10px 16px', fontSize: 14 }}>
+              ⬆ Share
             </button>
             {!readOnly && (
               !saved ? (

@@ -5,11 +5,7 @@ import PhotoSection from './PhotoSection.jsx';
 import PackingChecklist from './PackingChecklist.jsx';
 import { printTripBrief } from './TripBrief.jsx';
 import ConditionReport from './ConditionReport.jsx';
-
-function buildShareUrl(trip) {
-  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(trip))));
-  return `${window.location.origin}${window.location.pathname}#shared/${encoded}`;
-}
+import ShareModal, { buildShareUrl } from './ShareModal.jsx';
 
 function parseCoords(str) {
   if (!str) return null;
@@ -101,28 +97,7 @@ export default function TripDetail({ entry, onBack, onMarkDone, onMarkPlanned, o
   const [notes, setNotes] = useState(entry.notes || '');
   const [saved, setSaved] = useState(false);
   const [showReplan, setShowReplan] = useState(false);
-  const [copied, setCopied] = useState(false);
-
-  async function handleShare() {
-    const trip = entry.trip;
-    const url = buildShareUrl(trip);
-    const shareData = {
-      title: `${trip.destination} — Camp With My Dog`,
-      text: `Check out this dog-friendly camping trip: ${trip.destination}. ${trip.tagline || ''}`,
-      url,
-    };
-    try {
-      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-        await navigator.share(shareData);
-      } else {
-        await navigator.clipboard.writeText(url);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2500);
-      }
-    } catch {
-      window.prompt('Copy this link to share:', url);
-    }
-  }
+  const [showShare, setShowShare] = useState(false);
   const saveTimer = useRef(null);
 
   // Reset notes when switching to a different trip
@@ -150,6 +125,7 @@ export default function TripDetail({ entry, onBack, onMarkDone, onMarkPlanned, o
 
   return (
     <div className="fade-in">
+      {showShare && <ShareModal trip={entry.trip} onClose={() => setShowShare(false)} />}
       {showReplan && (
         <ReplanModal
           entry={entry}
@@ -269,11 +245,11 @@ export default function TripDetail({ entry, onBack, onMarkDone, onMarkPlanned, o
           </button>
         )}
         <button
-          onClick={handleShare}
+          onClick={() => setShowShare(true)}
           className="btn-ghost"
           style={{ flex: 1, padding: '12px', minWidth: 140 }}
         >
-          {copied ? '✓ Copied!' : '⬆ Share trip'}
+          ⬆ Share trip
         </button>
         <button
           onClick={() => exportGPX(entry)}
