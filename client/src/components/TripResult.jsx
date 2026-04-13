@@ -61,14 +61,22 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
   }
 
   async function handleShare() {
+    const url = buildShareUrl(trip);
+    const shareData = {
+      title: `${trip.destination} — Camp With My Dog`,
+      text: `Check out this dog-friendly camping trip: ${trip.destination}. ${trip.tagline || ''}`,
+      url,
+    };
     try {
-      const url = buildShareUrl(trip);
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
+      // Use native share sheet on mobile if available
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      }
     } catch {
-      // Fallback if clipboard is blocked
-      const url = buildShareUrl(trip);
       window.prompt('Copy this link to share:', url);
     }
   }

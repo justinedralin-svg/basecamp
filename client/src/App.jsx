@@ -244,6 +244,16 @@ export default function App() {
               window.location.hash = '';
               nav('plan');
             }}
+            onSaveTrip={(trip) => {
+              const newEntry = {
+                id: Date.now().toString(),
+                trip,
+                constraints: {},
+                date: new Date().toISOString(),
+                status: 'planned',
+              };
+              handleSaveTrip(newEntry);
+            }}
           />
         )}
       </main>
