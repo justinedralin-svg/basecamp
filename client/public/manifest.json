@@ -1,0 +1,26 @@
+{
+  "name": "Camp With My Dog",
+  "short_name": "Camp W/ My Dog",
+  "description": "AI-powered camping trip planner for dog owners",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f2ede0",
+  "theme_color": "#5c7a3e",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["travel", "lifestyle", "utilities"],
+  "screenshots": []
+}
