@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { loadProfile } from './ProfileForm.jsx';
 import { getDogName } from '../utils/profile.js';
+import { trackEvent } from '../utils/analytics.js';
 
 const ACTIVITIES = ['🥾 Hiking', '🏊 Swimming', '🎣 Fishing', '🧗 Climbing', '🚵 Mountain biking', '📷 Photography', '🌌 Stargazing', '😌 Just vibing'];
 const RIG_TYPES = ['Subaru Outback', 'Subaru Forester', 'Toyota 4Runner', 'Toyota Tacoma', 'Toyota Tundra', 'Jeep Wrangler', 'Ford Bronco', 'Sprinter Van', 'Ford F-150', 'Other'];
@@ -200,6 +201,7 @@ export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Something went wrong');
+      trackEvent('trip_planned');
       onComplete(data.trip, constraints);
     } catch (err) {
       setError(err.message);

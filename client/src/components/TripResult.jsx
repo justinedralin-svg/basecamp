@@ -4,6 +4,7 @@ import WeatherStrip from './WeatherStrip.jsx';
 import SafetySection from './SafetySection.jsx';
 import { getDogNames } from '../utils/profile.js';
 import ShareModal from './ShareModal.jsx';
+import { trackEvent } from '../utils/analytics.js';
 
 function RatingPill({ rating }) {
   const colors = {
@@ -67,6 +68,7 @@ function CoordsRow({ coords }) {
             href={url}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackEvent('directions_opened')}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 4,
               background: '#5c7a3e', color: '#fff',
@@ -89,6 +91,7 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
   const [showShare, setShowShare] = useState(false);
 
   function handleSave() {
+    trackEvent('trip_saved');
     onSave(entry);
     setSaved(true);
   }
@@ -113,7 +116,7 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
             </div>
           </div>
           <div className="hero-actions">
-            <button onClick={() => setShowShare(true)} className="btn-ghost" style={{ padding: '10px 16px', fontSize: 14 }}>
+            <button onClick={() => { trackEvent('share_clicked'); setShowShare(true); }} className="btn-ghost" style={{ padding: '10px 16px', fontSize: 14 }}>
               ⬆ Share
             </button>
             {!readOnly && (

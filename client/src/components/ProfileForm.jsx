@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { trackEvent } from '../utils/analytics.js';
 
 const RIG_TYPES = ['Subaru Outback', 'Subaru Forester', 'Toyota 4Runner', 'Toyota Tacoma', 'Toyota Tundra', 'Jeep Wrangler', 'Ford Bronco', 'Sprinter Van', 'Ford F-150', 'Other'];
 const CAMPING_STYLES = ['Rooftop tent', 'Ground tent', 'Truck bed / sleeping platform', 'Van / car camping', 'Hammock'];
@@ -55,7 +56,9 @@ export default function ProfileForm({ onBack, onSaved }) {
   }
 
   function handleSave() {
+    const isFirstSave = !existing;
     localStorage.setItem(PROFILE_KEY, JSON.stringify(form));
+    if (isFirstSave) trackEvent('profile_created');
     setSaved(true);
     onSaved && onSaved();
   }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { trackEvent } from '../utils/analytics.js';
 
 export default function ReplanModal({ entry, onClose, onComplete }) {
   const [changeRequest, setChangeRequest] = useState('');
@@ -21,6 +22,7 @@ export default function ReplanModal({ entry, onClose, onComplete }) {
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
+      trackEvent('trip_replanned');
       onComplete(data.trip, entry.constraints);
     } catch (err) {
       setError(err.message || 'Something went wrong — try again');
