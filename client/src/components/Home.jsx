@@ -2,7 +2,7 @@ import TripCard from './TripCard.jsx';
 
 const STEPS = [
   { icon: '👤', label: 'Add your dog', desc: 'Name, breed, size — personalizes everything' },
-  { icon: '🗺️', label: 'Plan a trip', desc: 'AI finds dog-friendly spots that fit your rig' },
+  { icon: '🗺️', label: 'Plan a trip', desc: 'Get dog-friendly spots that actually fit your rig' },
   { icon: '🌿', label: 'Leave it better', desc: 'File a condition report when you get back' },
 ];
 
@@ -22,7 +22,7 @@ export default function Home({ trips, onStartPlan, onViewLog, onViewTrip, onNavP
               Welcome to<br /><span style={{ color: '#5c7a3e' }}>Camp With My Dog</span>
             </h1>
             <p style={{ color: '#9c8b6e', fontSize: 15, maxWidth: 400, margin: '0 auto', lineHeight: 1.7 }}>
-              AI-powered camping trips built around your dog — not just "leashes allowed." Safety info, maps, packing lists, and Leave No Trace built in.
+              Camping trips planned around your dog — not just "leashes allowed." Real safety info, maps, packing lists, and Leave No Trace built in.
             </p>
           </div>
 

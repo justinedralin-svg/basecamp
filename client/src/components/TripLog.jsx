@@ -1,6 +1,6 @@
 import TripCard from './TripCard.jsx';
 
-export default function TripLog({ trips, onViewTrip, onMarkDone, onDelete, onStartPlan }) {
+export default function TripLog({ trips, onViewTrip, onMarkDone, onDelete, onStartPlan, onReschedule }) {
   const done = trips.filter(t => t.status === 'done');
   const planned = trips.filter(t => t.status !== 'done');
 
@@ -41,6 +41,7 @@ export default function TripLog({ trips, onViewTrip, onMarkDone, onDelete, onSta
                 onClick={() => onViewTrip(t.id)}
                 onMarkDone={onMarkDone}
                 onDelete={onDelete}
+                onReschedule={onReschedule}
               />
             ))}
           </div>
