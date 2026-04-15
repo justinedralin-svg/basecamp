@@ -28,8 +28,9 @@ const EMPTY_PROFILE = {
   dogs: [{ name: '', breed: '', size: 'Large (60–100 lbs)' }],
 };
 
-export default function ProfileForm({ onBack, onSaved }) {
+export default function ProfileForm({ onBack, onSaved, onStartPlan }) {
   const existing = loadProfile();
+  const isFirstTime = !existing;
   const [form, setForm] = useState(existing || { ...EMPTY_PROFILE });
   const [saved, setSaved] = useState(false);
 
@@ -56,9 +57,8 @@ export default function ProfileForm({ onBack, onSaved }) {
   }
 
   function handleSave() {
-    const isFirstSave = !existing;
     localStorage.setItem(PROFILE_KEY, JSON.stringify(form));
-    if (isFirstSave) trackEvent('profile_created');
+    if (isFirstTime) trackEvent('profile_created');
     setSaved(true);
     onSaved && onSaved();
   }
@@ -240,29 +240,72 @@ export default function ProfileForm({ onBack, onSaved }) {
       </div>
 
       {/* Save */}
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-        <button
-          onClick={handleSave}
-          className="btn-primary"
-          style={{ flex: 1, padding: '14px', fontSize: 15 }}
-        >
-          {saved ? '✓ Profile saved' : 'Save profile'}
-        </button>
-        {existing && (
+      {!saved && (
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <button
-            onClick={handleClear}
-            className="btn-ghost"
-            style={{ padding: '14px 18px', color: '#9c8b6e' }}
+            onClick={handleSave}
+            className="btn-primary"
+            style={{ flex: 1, padding: '14px', fontSize: 15 }}
           >
-            Clear
+            Save profile
           </button>
-        )}
-      </div>
+          {!isFirstTime && (
+            <button
+              onClick={handleClear}
+              className="btn-ghost"
+              style={{ padding: '14px 18px', color: '#9c8b6e' }}
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      )}
 
-      {saved && (
-        <p style={{ color: '#2d6a2d', fontSize: 13, textAlign: 'center', marginTop: 12 }}>
-          Your profile will pre-fill the planning form from now on.
-        </p>
+      {/* Post-save CTA */}
+      {saved && isFirstTime && (
+        <div style={{
+          background: 'rgba(92,122,62,0.08)',
+          border: '1px solid rgba(92,122,62,0.25)',
+          borderRadius: 12,
+          padding: '24px 20px',
+          textAlign: 'center',
+        }}>
+          <div style={{ fontSize: 36, marginBottom: 10 }}>🐾</div>
+          <div style={{ color: '#2c2416', fontWeight: 700, fontSize: 17, marginBottom: 6 }}>
+            {form.dogs?.[0]?.name ? `${form.dogs[0].name} is ready to go!` : "You're all set!"}
+          </div>
+          <div style={{ color: '#6b5c42', fontSize: 14, marginBottom: 20, lineHeight: 1.5 }}>
+            Your rig and dog are saved — the planning form will pre-fill from now on.
+          </div>
+          <button
+            onClick={onStartPlan}
+            className="btn-primary"
+            style={{ width: '100%', padding: '14px', fontSize: 15 }}
+          >
+            🗺️ Plan your first trip →
+          </button>
+        </div>
+      )}
+
+      {saved && !isFirstTime && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
+          <p style={{ color: '#2d6a2d', fontSize: 13, textAlign: 'center', margin: 0 }}>
+            ✓ Profile updated
+          </p>
+          <button
+            onClick={onStartPlan}
+            className="btn-primary"
+            style={{ width: '100%', padding: '13px', fontSize: 15 }}
+          >
+            🗺️ Plan a trip →
+          </button>
+          <button
+            onClick={onBack}
+            style={{ background: 'none', border: 'none', color: '#9c8b6e', fontSize: 14, cursor: 'pointer', padding: '6px' }}
+          >
+            ← Back
+          </button>
+        </div>
       )}
     </div>
   );

@@ -248,7 +248,11 @@ export default function App() {
         )}
 
         {view === 'profile' && (
-          <ProfileForm onBack={() => nav(view === 'profile' ? 'home' : view)} onSaved={handleProfileSaved} />
+          <ProfileForm
+            onBack={() => nav(view === 'profile' ? 'home' : view)}
+            onSaved={handleProfileSaved}
+            onStartPlan={() => nav('plan')}
+          />
         )}
 
         {view === 'shared' && (
