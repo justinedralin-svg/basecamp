@@ -143,28 +143,91 @@ app.get('/api/weather', async (req, res) => {
   const { lat, lon, dates } = req.query;
   if (!lat || !lon) return res.status(400).json({ error: 'lat and lon required' });
 
-  const { startDate, endDate } = parseTripDates(dates);
-
-  // Always fetch 7 days starting from the trip start date
-  const sevenDayEnd = new Date(startDate);
-  sevenDayEnd.setDate(sevenDayEnd.getDate() + 6);
   const pad = n => String(n).padStart(2, '0');
   const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  const windowEnd = fmt(sevenDayEnd);
 
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-    `&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max,weathercode` +
-    `&temperature_unit=fahrenheit&windspeed_unit=mph&timezone=auto` +
-    `&start_date=${startDate}&end_date=${windowEnd}`;
+  const { startDate, endDate } = parseTripDates(dates);
+
+  // Open-Meteo forecast API only covers ~16 days out
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tripStart = new Date(startDate + 'T00:00:00');
+  const daysOut = Math.floor((tripStart - today) / (1000 * 60 * 60 * 24));
+  const FORECAST_LIMIT = 15;
+
+  // ── LIVE FORECAST (within 15 days) ──────────────────────────────────────
+  if (daysOut <= FORECAST_LIMIT) {
+    const sevenDayEnd = new Date(tripStart);
+    sevenDayEnd.setDate(sevenDayEnd.getDate() + 6);
+    const windowEnd = fmt(sevenDayEnd);
+
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
+      `&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max,weathercode` +
+      `&temperature_unit=fahrenheit&windspeed_unit=mph&timezone=auto` +
+      `&start_date=${startDate}&end_date=${windowEnd}`;
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Open-Meteo error');
+      const data = await response.json();
+      return res.json({
+        forecastAvailable: true,
+        weather: data.daily,
+        timezone: data.timezone,
+        tripStart: startDate,
+        tripEnd: endDate,
+      });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
+  // ── CLIMATE NORMS (beyond 15 days — use same month from last year's archive) ──
+  const month = tripStart.getMonth() + 1; // 1-12
+  const monthName = ['January','February','March','April','May','June','July','August','September','October','November','December'][month - 1];
+  const archiveYear = tripStart.getFullYear() - 1;
+  const daysInMonth = new Date(archiveYear, month, 0).getDate();
+  const archiveStart = `${archiveYear}-${pad(month)}-01`;
+  const archiveEnd   = `${archiveYear}-${pad(month)}-${pad(daysInMonth)}`;
+
+  const archiveUrl = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}` +
+    `&start_date=${archiveStart}&end_date=${archiveEnd}` +
+    `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max` +
+    `&temperature_unit=fahrenheit&windspeed_unit=mph&timezone=auto`;
 
   try {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Open-Meteo error');
+    const response = await fetch(archiveUrl);
+    if (!response.ok) throw new Error('Climate archive error');
     const data = await response.json();
-    // Return trip date range so frontend can highlight the right days
-    res.json({ weather: data.daily, timezone: data.timezone, tripStart: startDate, tripEnd: endDate });
+    const d = data.daily;
+
+    // Compute monthly averages
+    const avg = arr => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : null;
+    const avgHigh  = avg(d.temperature_2m_max.map(Math.round));
+    const avgLow   = avg(d.temperature_2m_min.map(Math.round));
+    const maxHigh  = Math.round(Math.max(...d.temperature_2m_max));
+    const rainDays = d.precipitation_sum.filter(p => p > 0.1).length;
+    const rainPct  = Math.round((rainDays / d.precipitation_sum.length) * 100);
+    const avgWind  = avg(d.windspeed_10m_max.map(Math.round));
+
+    return res.json({
+      forecastAvailable: false,
+      daysOut,
+      month: monthName,
+      tripStart: startDate,
+      tripEnd: endDate,
+      climate: { avgHigh, avgLow, maxHigh, rainDays, rainPct, avgWind, archiveYear },
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    // Still return something useful even if climate API fails
+    return res.json({
+      forecastAvailable: false,
+      daysOut,
+      month: monthName,
+      tripStart: startDate,
+      tripEnd: endDate,
+      climate: null,
+    });
   }
 });
 

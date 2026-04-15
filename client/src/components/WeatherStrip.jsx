@@ -58,10 +58,14 @@ function dogHeatRisk(highF) {
   return null;
 }
 
-export default function WeatherStrip({ coordinates, tripDates, destination, weatherPrefs }) {
+export default function WeatherStrip({ coordinates, tripDates, destination, weatherPrefs, tripConditions }) {
   const [weather, setWeather] = useState(null);
   const [tripStart, setTripStart] = useState(null);
   const [tripEnd, setTripEnd] = useState(null);
+  const [forecastAvailable, setForecastAvailable] = useState(true);
+  const [climate, setClimate] = useState(null);
+  const [climateMonth, setClimateMonth] = useState(null);
+  const [daysOut, setDaysOut] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -76,9 +80,16 @@ export default function WeatherStrip({ coordinates, tripDates, destination, weat
       .then(r => r.json())
       .then(data => {
         if (data.error) throw new Error(data.error);
-        setWeather(data.weather);
+        setForecastAvailable(data.forecastAvailable !== false);
         setTripStart(data.tripStart);
         setTripEnd(data.tripEnd);
+        if (data.forecastAvailable !== false) {
+          setWeather(data.weather);
+        } else {
+          setClimate(data.climate);
+          setClimateMonth(data.month);
+          setDaysOut(data.daysOut);
+        }
       })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
@@ -99,9 +110,9 @@ export default function WeatherStrip({ coordinates, tripDates, destination, weat
   return (
     <div className="card" style={{ padding: 20, marginBottom: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-        <span style={{ fontSize: 18 }}>🌤️</span>
+        <span style={{ fontSize: 18 }}>{forecastAvailable ? '🌤️' : '📅'}</span>
         <h3 style={{ color: '#2c2416', fontSize: 15, fontWeight: 600, margin: 0 }}>
-          Weather forecast
+          {forecastAvailable ? 'Weather forecast' : 'Seasonal outlook'}
         </h3>
         {tripDates && (
           <span style={{ color: '#9c8b6e', fontSize: 12, marginLeft: 4 }}>· {tripDates}</span>
@@ -111,14 +122,98 @@ export default function WeatherStrip({ coordinates, tripDates, destination, weat
       {loading && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#9c8b6e', fontSize: 13 }}>
           <div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />
-          Fetching forecast...
+          {forecastAvailable ? 'Fetching forecast...' : 'Loading seasonal data...'}
         </div>
       )}
 
       {error && (
         <div style={{ color: '#9c8b6e', fontSize: 13 }}>
-          Forecast unavailable for this location.
+          Weather data unavailable for this location.
         </div>
+      )}
+
+      {/* ── SEASONAL OUTLOOK — trip is too far out for live forecast ── */}
+      {!forecastAvailable && !loading && (
+        <>
+          {daysOut && (
+            <div style={{
+              background: 'rgba(92,122,62,0.07)', border: '1px solid rgba(92,122,62,0.2)',
+              borderRadius: 8, padding: '8px 12px', marginBottom: 14,
+              color: '#4a6332', fontSize: 12,
+            }}>
+              📡 Trip is {daysOut} days out — live forecast not yet available. Showing typical {climateMonth} conditions.
+            </div>
+          )}
+
+          {climate && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 14 }}>
+              <div style={{ background: '#f0ebe0', borderRadius: 8, padding: '12px 14px', textAlign: 'center' }}>
+                <div style={{ color: '#9c8b6e', fontSize: 11, fontWeight: 500, marginBottom: 4 }}>Typical high</div>
+                <div style={{ color: '#2c2416', fontSize: 22, fontWeight: 700 }}>{climate.avgHigh}°</div>
+                <div style={{ color: '#9c8b6e', fontSize: 11 }}>avg · {climate.maxHigh}° max</div>
+              </div>
+              <div style={{ background: '#f0ebe0', borderRadius: 8, padding: '12px 14px', textAlign: 'center' }}>
+                <div style={{ color: '#9c8b6e', fontSize: 11, fontWeight: 500, marginBottom: 4 }}>Typical low</div>
+                <div style={{ color: '#2c2416', fontSize: 22, fontWeight: 700 }}>{climate.avgLow}°</div>
+                <div style={{ color: '#9c8b6e', fontSize: 11 }}>avg overnight</div>
+              </div>
+              <div style={{ background: '#f0ebe0', borderRadius: 8, padding: '12px 14px', textAlign: 'center' }}>
+                <div style={{ color: '#9c8b6e', fontSize: 11, fontWeight: 500, marginBottom: 4 }}>Rain days</div>
+                <div style={{ color: '#2c2416', fontSize: 22, fontWeight: 700 }}>{climate.rainDays}</div>
+                <div style={{ color: '#9c8b6e', fontSize: 11 }}>days / month ({climate.rainPct}%)</div>
+              </div>
+              <div style={{ background: '#f0ebe0', borderRadius: 8, padding: '12px 14px', textAlign: 'center' }}>
+                <div style={{ color: '#9c8b6e', fontSize: 11, fontWeight: 500, marginBottom: 4 }}>Avg wind</div>
+                <div style={{ color: '#2c2416', fontSize: 22, fontWeight: 700 }}>{climate.avgWind}</div>
+                <div style={{ color: '#9c8b6e', fontSize: 11 }}>mph daily max</div>
+              </div>
+            </div>
+          )}
+
+          {/* Dog heat risk based on climate avg high */}
+          {climate && (() => {
+            const heatRisk = dogHeatRisk(climate.avgHigh);
+            if (!heatRisk) return null;
+            return (
+              <div style={{ marginBottom: 14, background: heatRisk.bg, border: `1px solid ${heatRisk.border}`, borderRadius: 8, padding: '10px 14px' }}>
+                <div style={{ color: heatRisk.color, fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
+                  {heatRisk.icon} Typical {climateMonth} — dog heat {heatRisk.label}
+                </div>
+                <div style={{ color: '#6b5c42', fontSize: 12, lineHeight: 1.5 }}>{heatRisk.message}</div>
+              </div>
+            );
+          })()}
+
+          {/* AI-generated seasonal notes */}
+          {tripConditions && (
+            <div style={{ borderTop: '1px solid #e8e0ca', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {tripConditions.bestSeason && (
+                <div style={{ fontSize: 13, color: '#3d3020', lineHeight: 1.5 }}>
+                  <span style={{ color: '#9c8b6e', fontWeight: 500 }}>Best time: </span>
+                  {tripConditions.bestSeason}
+                </div>
+              )}
+              {tripConditions.currentNotes && (
+                <div style={{ fontSize: 13, color: '#3d3020', lineHeight: 1.5 }}>
+                  <span style={{ color: '#9c8b6e', fontWeight: 500 }}>This time of year: </span>
+                  {tripConditions.currentNotes}
+                </div>
+              )}
+              {tripConditions.waterAvailability && (
+                <div style={{ fontSize: 13, color: '#3d3020', lineHeight: 1.5 }}>
+                  <span style={{ color: '#9c8b6e', fontWeight: 500 }}>Water: </span>
+                  {tripConditions.waterAvailability}
+                </div>
+              )}
+            </div>
+          )}
+
+          {climate && (
+            <div style={{ color: '#b8aa88', fontSize: 10, marginTop: 10 }}>
+              Climate data from Open-Meteo archive · {climateMonth} {climate.archiveYear} · {destination}
+            </div>
+          )}
+        </>
       )}
 
       {weather && (() => {
@@ -278,9 +373,26 @@ export default function WeatherStrip({ coordinates, tripDates, destination, weat
       })()}
 
       {weather && (
-        <div style={{ color: '#b8aa88', fontSize: 10, marginTop: 10 }}>
-          Forecast from Open-Meteo · {destination}
-        </div>
+        <>
+          {/* AI seasonal notes below live forecast too */}
+          {tripConditions && (tripConditions.bestSeason || tripConditions.currentNotes) && (
+            <div style={{ borderTop: '1px solid #e8e0ca', paddingTop: 10, marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {tripConditions.bestSeason && (
+                <div style={{ fontSize: 12, color: '#6b5c42', lineHeight: 1.5 }}>
+                  <span style={{ fontWeight: 500 }}>Best time: </span>{tripConditions.bestSeason}
+                </div>
+              )}
+              {tripConditions.currentNotes && (
+                <div style={{ fontSize: 12, color: '#6b5c42', lineHeight: 1.5 }}>
+                  <span style={{ fontWeight: 500 }}>Season notes: </span>{tripConditions.currentNotes}
+                </div>
+              )}
+            </div>
+          )}
+          <div style={{ color: '#b8aa88', fontSize: 10, marginTop: 10 }}>
+            Forecast from Open-Meteo · {destination}
+          </div>
+        </>
       )}
     </div>
   );

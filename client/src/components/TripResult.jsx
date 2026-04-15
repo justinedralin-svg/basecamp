@@ -150,6 +150,7 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
         tripDates={entry.constraints?.tripDates}
         destination={trip.destination}
         weatherPrefs={entry.constraints?.weatherPrefs}
+        tripConditions={trip.conditions}
       />
 
       {/* Safety briefing — fire alerts + permits */}
