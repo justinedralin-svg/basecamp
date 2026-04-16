@@ -8,6 +8,7 @@ import TripDetail from './components/TripDetail.jsx';
 import SharedTrip from './components/SharedTrip.jsx';
 import ProfileForm from './components/ProfileForm.jsx';
 import TripStats from './components/TripStats.jsx';
+import { PrivacyPolicy, TermsOfService } from './components/LegalPage.jsx';
 import { getDogName, getDogNames } from './utils/profile.js';
 
 function getSharedTrip() {
@@ -274,7 +275,27 @@ export default function App() {
             }}
           />
         )}
+
+        {view === 'privacy' && <PrivacyPolicy onBack={() => nav('home')} />}
+        {view === 'terms'   && <TermsOfService onBack={() => nav('home')} />}
       </main>
+
+      {/* Footer */}
+      {!['plan', 'result', 'detail'].includes(view) && (
+        <footer style={{
+          borderTop: '1px solid #d8cfa8',
+          padding: '20px 24px',
+          display: 'flex',
+          justifyContent: 'center',
+          gap: 24,
+          flexWrap: 'wrap',
+        }}>
+          <span style={{ color: '#b8aa88', fontSize: 12 }}>© {new Date().getFullYear()} Camp With My Dog</span>
+          <button onClick={() => nav('privacy')} style={{ background: 'none', border: 'none', color: '#9c8b6e', fontSize: 12, cursor: 'pointer', padding: 0 }}>Privacy Policy</button>
+          <button onClick={() => nav('terms')}   style={{ background: 'none', border: 'none', color: '#9c8b6e', fontSize: 12, cursor: 'pointer', padding: 0 }}>Terms of Service</button>
+          <a href="mailto:hello@campwithmydog.com" style={{ color: '#9c8b6e', fontSize: 12, textDecoration: 'none' }}>Contact</a>
+        </footer>
+      )}
     </div>
   );
 }

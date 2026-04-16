@@ -9,6 +9,42 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+// ── Simple in-memory rate limiter ────────────────────────────────────────────
+// Limits /api/plan to MAX_REQUESTS per WINDOW_MS per IP.
+// Uses a Map so no extra dependency needed.
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const MAX_REQUESTS = 10;                       // 10 trip plans per IP per hour
+const rateLimitStore = new Map();
+
+// Clean up stale entries every 10 minutes so the Map doesn't grow forever
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of rateLimitStore) {
+    if (now > entry.resetAt) rateLimitStore.delete(key);
+  }
+}, 10 * 60 * 1000);
+
+function rateLimit(req, res, next) {
+  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+  const entry = rateLimitStore.get(ip);
+
+  if (!entry || now > entry.resetAt) {
+    rateLimitStore.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return next();
+  }
+
+  if (entry.count >= MAX_REQUESTS) {
+    const minutesLeft = Math.ceil((entry.resetAt - now) / 60000);
+    return res.status(429).json({
+      error: `You've planned ${MAX_REQUESTS} trips this hour — that's a lot of adventuring! Try again in ${minutesLeft} minute${minutesLeft !== 1 ? 's' : ''}.`,
+    });
+  }
+
+  entry.count++;
+  next();
+}
+
 const SYSTEM_PROMPT = `You are Camp With My Dog, an AI trip planner for overlanders and car campers who travel with their dogs. You specialize in vehicle-based camping — rooftop tents, truck beds, vans, and built-out rigs.
 
 Your job is to generate specific, actionable trip recommendations that actually work for the person's specific situation: their rig, their dogs, their skill level, their vibe.
@@ -79,7 +115,7 @@ You MUST respond with ONLY a valid JSON object — no markdown, no explanation b
   }
 }`;
 
-app.post('/api/plan', async (req, res) => {
+app.post('/api/plan', rateLimit, async (req, res) => {
   const { constraints, changeRequest, originalTrip } = req.body;
 
   if (!constraints) {
