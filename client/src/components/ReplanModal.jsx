@@ -20,7 +20,13 @@ export default function ReplanModal({ entry, onClose, onComplete }) {
           originalTrip: entry.trip,
         }),
       });
-      const data = await res.json();
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error('The server took too long to respond. Try again — it usually works on the second attempt.');
+      }
       if (data.error) throw new Error(data.error);
       trackEvent('trip_replanned');
       onComplete(data.trip, entry.constraints);

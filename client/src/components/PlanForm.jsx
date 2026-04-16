@@ -199,7 +199,14 @@ export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }
         body: JSON.stringify({ constraints }),
       });
 
-      const data = await res.json();
+      // Safely parse — if Render times out it returns an HTML page, not JSON
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error('The server took too long to respond. Try again — it usually works on the second attempt.');
+      }
       if (!res.ok) throw new Error(data.error || 'Something went wrong');
       trackEvent('trip_planned');
       onComplete(data.trip, constraints);
