@@ -1,236 +1,177 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
-// Comprehensive overlanding/camping vehicle database
-// Organised by category so we can show smart groupings
-const VEHICLES = [
-  // ── Trucks ──────────────────────────────────────────────────────────
-  'Toyota Tacoma', 'Toyota Tundra', 'Toyota Hilux',
-  'Ford F-150', 'Ford F-250', 'Ford F-350', 'Ford Ranger', 'Ford Maverick',
-  'Chevrolet Silverado 1500', 'Chevrolet Silverado 2500', 'Chevrolet Colorado',
-  'GMC Sierra 1500', 'GMC Sierra 2500', 'GMC Canyon',
-  'Ram 1500', 'Ram 2500', 'Ram 3500',
-  'Nissan Frontier', 'Nissan Titan',
-  'Honda Ridgeline',
-  'Jeep Gladiator',
-  'Rivian R1T',
-  'Canoo Pickup',
+// Vehicle database — Make → Models
+// Focused on trucks, SUVs, vans, and wagons used for camping/overlanding
+const VEHICLE_DB = {
+  'Audi':              ['A4 Allroad', 'A6 Allroad', 'Q5', 'Q7', 'Q8'],
+  'BMW':               ['X3', 'X5', 'X7'],
+  'Cadillac':          ['Escalade', 'XT5', 'XT6'],
+  'Chevrolet':         ['Blazer', 'Colorado', 'Equinox', 'Express Van', 'Silverado 1500', 'Silverado 2500HD', 'Silverado 3500HD', 'Suburban', 'Tahoe', 'Traverse', 'Trailblazer'],
+  'Dodge':             ['Durango', 'Ram 1500', 'Ram 2500', 'Ram 3500'],
+  'Ford':              ['Bronco', 'Bronco Sport', 'E-Series / Econoline', 'Expedition', 'Explorer', 'F-150', 'F-150 Lightning', 'F-250 Super Duty', 'F-350 Super Duty', 'Maverick', 'Ranger', 'Transit', 'Transit Connect'],
+  'GMC':               ['Acadia', 'Canyon', 'Envoy', 'Jimmy', 'Safari', 'Savana Van', 'Sierra 1500', 'Sierra 2500HD', 'Sierra 3500HD', 'Terrain', 'Yukon', 'Yukon XL'],
+  'Honda':             ['CR-V', 'Element', 'Passport', 'Pilot', 'Ridgeline'],
+  'Hyundai':           ['Palisade', 'Santa Fe', 'Tucson'],
+  'Isuzu':             ['Trooper', 'VehiCROSS'],
+  'Jeep':              ['Cherokee', 'Compass', 'Gladiator', 'Grand Cherokee', 'Grand Cherokee 4xe', 'Grand Wagoneer', 'Renegade', 'Wrangler', 'Wrangler 4xe', 'Wrangler Unlimited'],
+  'Kia':               ['Sorento', 'Sportage', 'Telluride'],
+  'Land Rover':        ['Defender', 'Discovery', 'Discovery Sport', 'Freelander', 'LR3', 'LR4', 'Range Rover', 'Range Rover Sport'],
+  'Lexus':             ['GX 460', 'GX 470', 'LX 570', 'LX 600'],
+  'Lincoln':           ['Aviator', 'Navigator'],
+  'Mazda':             ['CX-5', 'CX-50', 'CX-9'],
+  'Mercedes-Benz':     ['G-Class', 'GLE', 'Metris', 'Sprinter 1500', 'Sprinter 2500', 'Sprinter 3500'],
+  'Mitsubishi':        ['Montero', 'Outlander', 'Pajero'],
+  'Nissan':            ['Armada', 'Frontier', 'Murano', 'NV Cargo', 'NV Passenger', 'Pathfinder', 'Patrol', 'Rogue', 'Titan', 'Xterra'],
+  'Ram':               ['1500', '1500 Classic', '2500', '3500', 'ProMaster', 'ProMaster City'],
+  'Rivian':            ['R1S', 'R1T'],
+  'Subaru':            ['Ascent', 'Crosstrek', 'Forester', 'Legacy Outback', 'Outback'],
+  'Tesla':             ['Model X', 'Model Y'],
+  'Toyota':            ['4Runner', 'FJ Cruiser', 'HiAce', 'Highlander', 'Land Cruiser', 'Land Cruiser 200', 'Land Cruiser 300', 'RAV4', 'RAV4 Hybrid', 'Sequoia', 'Tacoma', 'Tacoma Hybrid', 'Tundra'],
+  'Volkswagen':        ['Atlas', 'Crafter', 'Golf Alltrack', 'Touareg', 'Transporter'],
+  'Volvo':             ['V60 Cross Country', 'V90 Cross Country', 'XC60', 'XC90'],
+};
 
-  // ── Body-on-frame SUVs ───────────────────────────────────────────────
-  'Toyota 4Runner', 'Toyota Land Cruiser', 'Toyota Land Cruiser 200', 'Toyota FJ Cruiser', 'Toyota Sequoia',
-  'Jeep Wrangler', 'Jeep Wrangler Unlimited', 'Jeep Grand Cherokee', 'Jeep Grand Wagoneer', 'Jeep Cherokee',
-  'Ford Bronco', 'Ford Bronco Sport', 'Ford Expedition',
-  'Chevrolet Tahoe', 'Chevrolet Suburban', 'Chevrolet Blazer K5',
-  'GMC Yukon', 'GMC Yukon XL',
-  'Ram 1500 Classic', 'Dodge Durango',
-  'Nissan Patrol', 'Nissan Armada',
-  'Land Rover Defender', 'Land Rover Discovery', 'Land Rover Range Rover',
-  'Mercedes-Benz G-Class',
-  'Lexus GX', 'Lexus LX',
-  'Lincoln Navigator',
+const MAKES = Object.keys(VEHICLE_DB).sort();
 
-  // ── Crossovers & Subaru ──────────────────────────────────────────────
-  'Subaru Outback', 'Subaru Forester', 'Subaru Ascent', 'Subaru Crosstrek',
-  'Toyota RAV4', 'Toyota RAV4 Hybrid', 'Toyota Venza', 'Toyota Highlander',
-  'Honda CR-V', 'Honda Passport', 'Honda Pilot',
-  'Ford Explorer', 'Ford Edge',
-  'Chevrolet Equinox', 'Chevrolet Traverse', 'Chevrolet Trailblazer',
-  'GMC Terrain', 'GMC Acadia',
-  'Jeep Compass', 'Jeep Renegade',
-  'Kia Telluride', 'Kia Sorento', 'Kia Sportage',
-  'Hyundai Palisade', 'Hyundai Santa Fe', 'Hyundai Tucson',
-  'Mazda CX-5', 'Mazda CX-50', 'Mazda CX-9',
-  'Nissan Pathfinder', 'Nissan Murano', 'Nissan Rogue',
-  'Volvo XC90', 'Volvo XC60',
-  'BMW X5', 'BMW X3',
-  'Audi Q7', 'Audi Q5',
-  'Mercedes-Benz GLE', 'Mercedes-Benz GLC',
-  'Rivian R1S',
-  'Cadillac Escalade', 'Cadillac XT6',
-  'Lincoln Aviator',
+// Generate year options — current year down to 1990
+const currentYear = new Date().getFullYear();
+const YEARS = Array.from({ length: currentYear - 1989 }, (_, i) => String(currentYear - i));
 
-  // ── Vans ─────────────────────────────────────────────────────────────
-  'Mercedes-Benz Sprinter', 'Mercedes-Benz Metris',
-  'Ford Transit', 'Ford Transit Connect', 'Ford E-Series / Econoline',
-  'Ram ProMaster', 'Ram ProMaster City',
-  'Chevrolet Express', 'GMC Savana',
-  'Volkswagen Transporter', 'Volkswagen Crafter',
-  'Nissan NV', 'Nissan NV200',
-  'Toyota HiAce',
-  'Fiat Ducato',
-  'Winnebago Travato', 'Airstream Interstate',
+const selectStyle = {
+  width: '100%',
+  padding: '10px 14px',
+  fontSize: 15,
+  boxSizing: 'border-box',
+  appearance: 'none',
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239c8b6e' d='M6 8L0 0h12z'/%3E%3C/svg%3E")`,
+  backgroundRepeat: 'no-repeat',
+  backgroundPosition: 'right 14px center',
+  paddingRight: 36,
+  cursor: 'pointer',
+};
 
-  // ── Wagons / Station wagons ──────────────────────────────────────────
-  'Volvo V90 Cross Country', 'Volvo V60 Cross Country',
-  'Audi A4 Allroad', 'Audi A6 Allroad',
-  'Subaru Legacy Outback',
-  'Volkswagen Golf Alltrack', 'Volkswagen Passat Alltrack',
-  'BMW 3 Series xDrive Touring',
+export default function RigSearch({ value, onChange }) {
+  // Parse an existing value like "2021 Toyota Tacoma" or "Toyota Tacoma"
+  function parseValue(val) {
+    if (!val) return { year: '', make: '', model: '' };
+    const parts = val.trim().split(' ');
+    if (/^\d{4}$/.test(parts[0])) {
+      const year = parts[0];
+      const rest = parts.slice(1).join(' ');
+      const make = MAKES.find(m => rest.startsWith(m)) || '';
+      const model = make ? rest.slice(make.length).trim() : rest;
+      return { year, make, model };
+    }
+    const make = MAKES.find(m => val.startsWith(m)) || '';
+    const model = make ? val.slice(make.length).trim() : '';
+    return { year: '', make, model };
+  }
 
-  // ── Electric / Hybrid overlanders ───────────────────────────────────
-  'Ford F-150 Lightning', 'Ford Explorer PHEV',
-  'Chevrolet Silverado EV',
-  'GMC Hummer EV',
-  'Ram 1500 REV',
-  'Toyota Tacoma Hybrid',
-  'Jeep Grand Cherokee 4xe', 'Jeep Wrangler 4xe',
-  'Rivian R1T', 'Rivian R1S',
-  'Tesla Model Y', 'Tesla Model X',
-];
+  const parsed = parseValue(value);
+  const [year, setYear]   = useState(parsed.year);
+  const [make, setMake]   = useState(parsed.make);
+  const [model, setModel] = useState(parsed.model);
 
-// Deduplicate and sort alphabetically
-const ALL_VEHICLES = [...new Set(VEHICLES)].sort((a, b) => a.localeCompare(b));
-
-export default function RigSearch({ value, onChange, placeholder = 'Search your vehicle...' }) {
-  const [query, setQuery] = useState(value || '');
-  const [open, setOpen] = useState(false);
-  const [highlighted, setHighlighted] = useState(0);
-  const inputRef = useRef(null);
-  const listRef = useRef(null);
-
-  // Sync external value changes (e.g. profile pre-fill)
+  // Sync external value changes (profile pre-fill)
   useEffect(() => {
-    if (value && value !== query) setQuery(value);
+    const p = parseValue(value);
+    setYear(p.year);
+    setMake(p.make);
+    setModel(p.model);
   }, [value]);
 
-  const filtered = query.trim().length < 1
-    ? ALL_VEHICLES.slice(0, 12)   // show popular options when empty
-    : ALL_VEHICLES.filter(v =>
-        v.toLowerCase().includes(query.toLowerCase())
-      ).slice(0, 20);
-
-  const showCustomOption = query.trim().length > 1 &&
-    !ALL_VEHICLES.some(v => v.toLowerCase() === query.trim().toLowerCase());
-
-  const allOptions = showCustomOption
-    ? [...filtered, `Use "${query.trim()}"`]
-    : filtered;
-
-  function select(option) {
-    const val = option.startsWith('Use "') ? query.trim() : option;
-    setQuery(val);
-    onChange(val);
-    setOpen(false);
+  function emit(y, mk, mo) {
+    const parts = [y, mk, mo].filter(Boolean);
+    onChange(parts.join(' '));
   }
 
-  function handleKeyDown(e) {
-    if (!open) {
-      if (e.key === 'ArrowDown' || e.key === 'Enter') setOpen(true);
-      return;
-    }
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setHighlighted(h => Math.min(h + 1, allOptions.length - 1));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setHighlighted(h => Math.max(h - 1, 0));
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      if (allOptions[highlighted]) select(allOptions[highlighted]);
-    } else if (e.key === 'Escape') {
-      setOpen(false);
-    }
+  function handleYear(val) {
+    setYear(val);
+    emit(val, make, model);
   }
 
-  function handleChange(e) {
-    setQuery(e.target.value);
-    onChange(e.target.value);
-    setOpen(true);
-    setHighlighted(0);
+  function handleMake(val) {
+    setMake(val);
+    setModel('');
+    emit(year, val, '');
   }
 
-  function handleBlur(e) {
-    // Delay so click on option fires first
-    setTimeout(() => setOpen(false), 150);
+  function handleModel(val) {
+    setModel(val);
+    emit(year, make, val);
   }
+
+  const models = make ? (VEHICLE_DB[make] || []) : [];
 
   return (
-    <div style={{ position: 'relative' }}>
-      <div style={{ position: 'relative' }}>
-        <input
-          ref={inputRef}
-          type="text"
-          value={query}
-          onChange={handleChange}
-          onFocus={() => setOpen(true)}
-          onBlur={handleBlur}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          style={{
-            width: '100%',
-            padding: '10px 36px 10px 14px',
-            fontSize: 15,
-            boxSizing: 'border-box',
-          }}
-          autoComplete="off"
-        />
-        {/* Search / clear icon */}
-        {query ? (
-          <button
-            type="button"
-            onMouseDown={e => { e.preventDefault(); setQuery(''); onChange(''); setOpen(false); }}
-            style={{
-              position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: '#9c8b6e', fontSize: 16, lineHeight: 1, padding: 2,
-            }}
-          >×</button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {/* Row 1: Year + Make */}
+      <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 10 }}>
+        <div>
+          <div style={{ color: '#9c8b6e', fontSize: 11, fontWeight: 500, marginBottom: 5 }}>Year</div>
+          <select
+            value={year}
+            onChange={e => handleYear(e.target.value)}
+            style={selectStyle}
+          >
+            <option value="">Any</option>
+            {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+        </div>
+        <div>
+          <div style={{ color: '#9c8b6e', fontSize: 11, fontWeight: 500, marginBottom: 5 }}>Make</div>
+          <select
+            value={make}
+            onChange={e => handleMake(e.target.value)}
+            style={selectStyle}
+          >
+            <option value="">Select make…</option>
+            {MAKES.map(m => <option key={m} value={m}>{m}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {/* Row 2: Model (full width, only active once make is chosen) */}
+      <div>
+        <div style={{ color: '#9c8b6e', fontSize: 11, fontWeight: 500, marginBottom: 5 }}>Model</div>
+        {make ? (
+          <select
+            value={model}
+            onChange={e => handleModel(e.target.value)}
+            style={selectStyle}
+          >
+            <option value="">Select model…</option>
+            {models.map(m => <option key={m} value={m}>{m}</option>)}
+            <option value="Other">Other / not listed</option>
+          </select>
         ) : (
-          <span style={{
-            position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-            color: '#c8bc96', fontSize: 14, pointerEvents: 'none',
-          }}>🔍</span>
+          <select disabled style={{ ...selectStyle, opacity: 0.45, cursor: 'not-allowed' }}>
+            <option>Select a make first</option>
+          </select>
         )}
       </div>
 
-      {open && allOptions.length > 0 && (
-        <div
-          ref={listRef}
-          style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            zIndex: 100,
-            background: '#fffdf8',
-            border: '1px solid #c8bc96',
-            borderTop: 'none',
-            borderRadius: '0 0 8px 8px',
-            boxShadow: '0 4px 16px rgba(44,36,22,0.12)',
-            maxHeight: 260,
-            overflowY: 'auto',
-          }}
-        >
-          {query.trim().length < 1 && (
-            <div style={{ padding: '8px 14px 4px', color: '#b8aa88', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-              Popular
-            </div>
-          )}
-          {allOptions.map((option, i) => {
-            const isCustom = option.startsWith('Use "');
-            return (
-              <div
-                key={option}
-                onMouseDown={() => select(option)}
-                style={{
-                  padding: '9px 14px',
-                  fontSize: 14,
-                  cursor: 'pointer',
-                  background: i === highlighted ? 'rgba(92,122,62,0.1)' : 'transparent',
-                  color: isCustom ? '#5c7a3e' : '#2c2416',
-                  fontStyle: isCustom ? 'normal' : 'normal',
-                  fontWeight: isCustom ? 500 : 400,
-                  borderTop: isCustom ? '1px solid #e8e0ca' : 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                }}
-                onMouseEnter={() => setHighlighted(i)}
-              >
-                {isCustom && <span style={{ fontSize: 12 }}>✏️</span>}
-                {option}
-              </div>
-            );
-          })}
+      {/* Free-text fallback for "Other" model */}
+      {model === 'Other' && (
+        <input
+          type="text"
+          placeholder="Type your model (e.g. Tacoma TRD Pro)"
+          style={{ width: '100%', padding: '10px 14px', fontSize: 15, boxSizing: 'border-box' }}
+          onBlur={e => { if (e.target.value) { setModel(e.target.value); emit(year, make, e.target.value); } }}
+          defaultValue=""
+          autoFocus
+        />
+      )}
+
+      {/* Summary pill */}
+      {make && model && model !== 'Other' && (
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          background: 'rgba(92,122,62,0.09)', border: '1px solid rgba(92,122,62,0.22)',
+          borderRadius: 999, padding: '4px 14px', fontSize: 13,
+          color: '#3d5429', fontWeight: 500, alignSelf: 'flex-start',
+        }}>
+          🚙 {[year, make, model].filter(Boolean).join(' ')}
         </div>
       )}
     </div>
