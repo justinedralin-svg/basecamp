@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { showToast } from '../utils/toast.js';
 
 // Only encode the fields needed to display the shared trip — skip packing lists, alt options etc.
 function slimTrip(trip) {
@@ -44,6 +45,7 @@ export default function ShareModal({ trip, onClose }) {
       await navigator.clipboard.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
+      showToast('Link copied to clipboard!');
     } catch {
       window.prompt('Copy this link:', url);
     }

@@ -5,6 +5,7 @@ import SafetySection from './SafetySection.jsx';
 import { getDogNames } from '../utils/profile.js';
 import ShareModal from './ShareModal.jsx';
 import { trackEvent } from '../utils/analytics.js';
+import { showToast } from '../utils/toast.js';
 
 function RatingPill({ rating }) {
   const colors = {
@@ -94,6 +95,7 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
     trackEvent('trip_saved');
     onSave(entry);
     setSaved(true);
+    showToast('Trip saved to your log!');
   }
 
 

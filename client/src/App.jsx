@@ -9,6 +9,7 @@ import SharedTrip from './components/SharedTrip.jsx';
 import ProfileForm from './components/ProfileForm.jsx';
 import TripStats from './components/TripStats.jsx';
 import { PrivacyPolicy, TermsOfService } from './components/LegalPage.jsx';
+import Toast from './components/Toast.jsx';
 import { getDogName, getDogNames } from './utils/profile.js';
 
 function getSharedTrip() {
@@ -293,9 +294,17 @@ export default function App() {
           <span style={{ color: '#b8aa88', fontSize: 12 }}>© {new Date().getFullYear()} Camp With My Dog</span>
           <button onClick={() => nav('privacy')} style={{ background: 'none', border: 'none', color: '#9c8b6e', fontSize: 12, cursor: 'pointer', padding: 0 }}>Privacy Policy</button>
           <button onClick={() => nav('terms')}   style={{ background: 'none', border: 'none', color: '#9c8b6e', fontSize: 12, cursor: 'pointer', padding: 0 }}>Terms of Service</button>
-          <a href="mailto:hello@campwithmydog.com" style={{ color: '#9c8b6e', fontSize: 12, textDecoration: 'none' }}>Contact</a>
+          <a
+            href="mailto:hello@campwithmydog.com?subject=Camp With My Dog — Feedback"
+            style={{ color: '#9c8b6e', fontSize: 12, textDecoration: 'none' }}
+          >
+            Send feedback
+          </a>
         </footer>
       )}
+
+      {/* Global toast notifications */}
+      <Toast />
     </div>
   );
 }

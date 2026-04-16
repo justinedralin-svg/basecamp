@@ -231,7 +231,49 @@ export default function MapPin({ coordinates, destination, campsiteName }) {
     setSearchLoading(false);
   }
 
-  if (!geocoding && !resolvedCoords) return null;
+  // No coordinates found — show a friendly empty state with inline search
+  if (!geocoding && !resolvedCoords) {
+    return (
+      <div style={{ borderRadius: 8, border: '1px solid #d8cfa8', marginBottom: 14, overflow: 'hidden' }}>
+        <div style={{
+          height: 160,
+          background: 'linear-gradient(160deg, #e8e0ca 0%, #d4c9aa 100%)',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          gap: 10, padding: '0 24px', textAlign: 'center',
+        }}>
+          <span style={{ fontSize: 36 }}>🗺️</span>
+          <p style={{ color: '#6b5c42', fontSize: 14, margin: 0, lineHeight: 1.5 }}>
+            Couldn't pin the exact location.<br />
+            Search below to place it on the map.
+          </p>
+        </div>
+        <div style={{ padding: '12px', background: '#f0ebe0', borderTop: '1px solid #d8cfa8' }}>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              autoFocus
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSearch()}
+              placeholder={`e.g. "${campsiteName || destination || 'campsite name, CA'}"`}
+              style={{ flex: 1, padding: '9px 12px', fontSize: 14, borderRadius: 6, border: '1px solid #c8bc96', background: '#faf7f0', color: '#2c2416', outline: 'none' }}
+            />
+            <button
+              onClick={handleSearch}
+              disabled={searchLoading || !searchQuery.trim()}
+              className="btn-primary"
+              style={{ padding: '8px 16px', fontSize: 14, opacity: searchLoading || !searchQuery.trim() ? 0.6 : 1 }}
+            >
+              {searchLoading ? '…' : 'Find'}
+            </button>
+          </div>
+          {searchError && (
+            <div style={{ color: '#b91c1c', fontSize: 12, marginTop: 6 }}>{searchError}</div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #d8cfa8', marginBottom: 14 }}>
