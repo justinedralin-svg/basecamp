@@ -1,4 +1,5 @@
 import TripCard from './TripCard.jsx';
+import SampleTrip from './SampleTrip.jsx';
 
 const STEPS = [
   { icon: '👤', label: 'Add your dog', desc: 'Name, breed, size — personalizes everything' },
@@ -15,35 +16,37 @@ export default function Home({ trips, onStartPlan, onViewLog, onViewTrip, onNavP
 
       {/* First-time onboarding */}
       {isFirstTime ? (
-        <div style={{ padding: '40px 0 32px' }}>
-          <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <div style={{ fontSize: 52, marginBottom: 16 }}>🐾</div>
-            <h1 style={{ color: '#2c2416', fontSize: 32, fontWeight: 700, letterSpacing: '-0.6px', marginBottom: 12, lineHeight: 1.2 }}>
-              Welcome to<br /><span style={{ color: '#5c7a3e' }}>Camp With My Dog</span>
+        <div style={{ padding: '32px 0 32px' }}>
+          {/* Hook headline */}
+          <div style={{ textAlign: 'center', marginBottom: 28 }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>🐾</div>
+            <h1 style={{ color: '#2c2416', fontSize: 28, fontWeight: 700, letterSpacing: '-0.5px', marginBottom: 8, lineHeight: 1.2 }}>
+              Stop Googling<br /><span style={{ color: '#5c7a3e' }}>"dog-friendly camping near me"</span>
             </h1>
-            <p style={{ color: '#9c8b6e', fontSize: 15, maxWidth: 400, margin: '0 auto', lineHeight: 1.7 }}>
-              Camping trips planned around your dog — not just "leashes allowed." Real safety info, maps, packing lists, and Leave No Trace built in.
+            <p style={{ color: '#9c8b6e', fontSize: 14, maxWidth: 360, margin: '0 auto', lineHeight: 1.7 }}>
+              Tell us your dog, your rig, your dates — get a full trip plan with maps, safety info, and a dog report. Free.
             </p>
           </div>
 
-          {/* 3 steps */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28 }}>
+          {/* Sample trip — the money shot */}
+          <SampleTrip onPlan={onStartPlan} dogName={dogName} />
+
+          {/* Steps — below the example, as secondary info */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
             {STEPS.map((s, i) => (
-              <div key={s.label} className="card" style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div key={s.label} className="card" style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{
-                  width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+                  width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
                   background: 'rgba(92,122,62,0.12)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 18,
+                  fontSize: 16,
                 }}>
                   {s.icon}
                 </div>
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                    <span style={{ color: '#9c8b6e', fontSize: 11, fontWeight: 600 }}>STEP {i + 1}</span>
-                  </div>
-                  <div style={{ color: '#2c2416', fontWeight: 600, fontSize: 14 }}>{s.label}</div>
-                  <div style={{ color: '#9c8b6e', fontSize: 13 }}>{s.desc}</div>
+                  <div style={{ color: '#9c8b6e', fontSize: 10, fontWeight: 600, marginBottom: 1 }}>STEP {i + 1}</div>
+                  <div style={{ color: '#2c2416', fontWeight: 600, fontSize: 13 }}>{s.label}</div>
+                  <div style={{ color: '#9c8b6e', fontSize: 12 }}>{s.desc}</div>
                 </div>
               </div>
             ))}
@@ -52,17 +55,17 @@ export default function Home({ trips, onStartPlan, onViewLog, onViewTrip, onNavP
           {/* CTAs */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <button
-              onClick={onNavProfile}
+              onClick={onStartPlan}
               className="btn-primary"
               style={{ width: '100%', padding: '14px', fontSize: 15 }}
             >
-              👤 Add your dog to get started
+              🗺️ Plan my trip →
             </button>
             <button
-              onClick={onStartPlan}
-              style={{ background: 'none', border: 'none', color: '#9c8b6e', fontSize: 14, cursor: 'pointer', padding: '8px', textDecoration: 'underline' }}
+              onClick={onNavProfile}
+              style={{ background: 'none', border: 'none', color: '#9c8b6e', fontSize: 13, cursor: 'pointer', padding: '6px', textDecoration: 'underline' }}
             >
-              Skip and plan a trip first
+              Add your dog first for better results
             </button>
           </div>
         </div>
@@ -119,12 +122,7 @@ export default function Home({ trips, onStartPlan, onViewLog, onViewTrip, onNavP
           )}
 
           {trips.length === 0 && (
-            <div className="card" style={{ padding: 32, textAlign: 'center', marginTop: 8 }}>
-              <div style={{ fontSize: 32, marginBottom: 12 }}>🗺️</div>
-              <div style={{ color: '#9c8b6e', fontSize: 15 }}>
-                {dogName ? `No trips yet. Time to find somewhere ${dogName} will love.` : 'Your trip log is empty. Plan your first trip above.'}
-              </div>
-            </div>
+            <SampleTrip onPlan={onStartPlan} dogName={dogName} />
           )}
         </>
       )}
