@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { trackEvent } from '../utils/analytics.js';
-
-const RIG_TYPES = ['Subaru Outback', 'Subaru Forester', 'Toyota 4Runner', 'Toyota Tacoma', 'Toyota Tundra', 'Jeep Wrangler', 'Ford Bronco', 'Sprinter Van', 'Ford F-150', 'Other'];
+import RigSearch from './RigSearch.jsx';
 const CAMPING_STYLES = ['Rooftop tent', 'Ground tent', 'Truck bed / sleeping platform', 'Van / car camping', 'Hammock'];
 const ROAD_EXPERIENCE = ['Paved / smooth dirt only', 'Moderate dirt roads (stock is fine)', 'Technical roads (comfortable airing down)', 'I\'ll go anywhere'];
 const DRIVE_DISTANCES = ['Up to 2 hours', '2–3 hours', '3–4 hours', '4–5 hours', 'Willing to drive far'];
@@ -106,24 +105,11 @@ export default function ProfileForm({ onBack, onSaved, onStartPlan }) {
       {/* Rig */}
       <div style={sectionStyle}>
         <label style={labelStyle}>Your rig</label>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {RIG_TYPES.map(r => (
-            <button
-              key={r}
-              type="button"
-              className={`tag-btn${form.rigType === r ? ' selected' : ''}`}
-              onClick={() => set('rigType', r)}
-            >{r}</button>
-          ))}
-        </div>
-        {form.rigType === 'Other' && (
-          <input
-            style={{ ...inputStyle, marginTop: 10 }}
-            value={form.rigTypeCustom}
-            onChange={e => set('rigTypeCustom', e.target.value)}
-            placeholder="e.g. Chevy Colorado ZR2"
-          />
-        )}
+        <RigSearch
+          value={form.rigType}
+          onChange={val => set('rigType', val)}
+          placeholder="Search make & model…"
+        />
       </div>
 
       {/* Camping style */}

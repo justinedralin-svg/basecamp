@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { loadProfile } from './ProfileForm.jsx';
 import { getDogName } from '../utils/profile.js';
 import { trackEvent } from '../utils/analytics.js';
+import RigSearch from './RigSearch.jsx';
 
 const ACTIVITIES = ['🥾 Hiking', '🏊 Swimming', '🎣 Fishing', '🧗 Climbing', '🚵 Mountain biking', '📷 Photography', '🌌 Stargazing', '😌 Just vibing'];
-const RIG_TYPES = ['Subaru Outback', 'Subaru Forester', 'Toyota 4Runner', 'Toyota Tacoma', 'Toyota Tundra', 'Jeep Wrangler', 'Ford Bronco', 'Sprinter Van', 'Ford F-150', 'Other'];
 const CAMPING_STYLES = ['Rooftop tent', 'Ground tent', 'Truck bed / sleeping platform', 'Van / car camping', 'Hammock'];
 const ROAD_EXPERIENCE = ['Paved / smooth dirt only', 'Moderate dirt roads (stock is fine)', 'Technical roads (comfortable airing down)', 'I\'ll go anywhere'];
 const DRIVE_DISTANCES = ['Up to 2 hours', '2–3 hours', '3–4 hours', '4–5 hours', 'Willing to drive far'];
@@ -98,8 +98,7 @@ function formatDates(start, end) {
 // Summarize rig for the collapsed view
 function rigSummary(form) {
   const parts = [];
-  const rig = form.rigType === 'Other' ? form.rigTypeCustom : form.rigType;
-  if (rig) parts.push(rig);
+  if (form.rigType) parts.push(form.rigType);
   if (form.campingStyle) parts.push(form.campingStyle);
   if (form.roadExperience) parts.push(form.roadExperience);
   return parts.join(' · ') || null;
@@ -187,10 +186,7 @@ export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }
       msgIndex++;
     }, 2500);
 
-    const constraints = {
-      ...form,
-      rigType: form.rigType === 'Other' ? form.rigTypeCustom : form.rigType,
-    };
+    const constraints = { ...form };
 
     try {
       const res = await fetch('/api/plan', {
@@ -369,14 +365,11 @@ export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }
             <>
               <div style={{ marginBottom: 16 }}>
                 <div style={{ color: '#9c8b6e', fontSize: 12, fontWeight: 500, marginBottom: 8 }}>Vehicle</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {RIG_TYPES.map(r => (
-                    <button type="button" key={r} className={`tag-btn${form.rigType === r ? ' selected' : ''}`} onClick={() => set('rigType', r)}>{r}</button>
-                  ))}
-                </div>
-                {form.rigType === 'Other' && (
-                  <input style={{ ...inputStyle, marginTop: 10 }} value={form.rigTypeCustom} onChange={e => set('rigTypeCustom', e.target.value)} placeholder="e.g. Chevy Colorado ZR2" />
-                )}
+                <RigSearch
+                  value={form.rigType}
+                  onChange={val => set('rigType', val)}
+                  placeholder="Search make & model…"
+                />
               </div>
 
               <div style={{ marginBottom: 16 }}>
