@@ -767,6 +767,184 @@ function buildReplanPrompt(constraints, originalTrip, changeRequest) {
   return lines.join('\n');
 }
 
+// ── Email trip plan ──────────────────────────────────────────────────────────
+app.post('/api/send-plan', async (req, res) => {
+  const { email, trip, constraints } = req.body;
+  if (!email || !trip) return res.status(400).json({ error: 'email and trip are required' });
+  if (!process.env.RESEND_API_KEY) return res.status(500).json({ error: 'Email not configured' });
+
+  const { Resend } = require('resend');
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
+  const subject = `Your trip to ${trip.destination} 🐾`;
+  const appUrl = process.env.APP_URL || 'https://campwithmydog.com';
+
+  const html = buildTripEmail({ trip, constraints, appUrl });
+
+  try {
+    await resend.emails.send({
+      from: 'Camp With My Dog <hello@campwithmydog.com>',
+      to: email,
+      subject,
+      html,
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Resend error:', err.message);
+    res.status(500).json({ error: 'Failed to send email' });
+  }
+});
+
+function buildTripEmail({ trip, constraints, appUrl }) {
+  const e = s => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const row = (label, value) => value ? `
+    <tr>
+      <td style="color:#9c8b6e;font-size:13px;font-weight:500;padding:7px 0 7px 0;border-bottom:1px solid #e8e0ca;width:38%;vertical-align:top;">${e(label)}</td>
+      <td style="color:#3d3020;font-size:14px;padding:7px 0 7px 12px;border-bottom:1px solid #e8e0ca;line-height:1.5;">${e(value)}</td>
+    </tr>` : '';
+
+  const pill = (text, color) => `<span style="display:inline-block;background:${color}22;color:${color};border:1px solid ${color}44;border-radius:20px;font-size:12px;font-weight:600;padding:2px 10px;">${e(text)}</span>`;
+
+  const ratingColor = r => ({ Excellent:'#2d6a2d', Good:'#2d6a2d', Fair:'#b45309', Challenging:'#b91c1c', Easy:'#2d6a2d', Moderate:'#b45309', Technical:'#b91c1c' })[r] || '#6b5c42';
+
+  const listItems = arr => (arr || []).map(item => `
+    <li style="color:#3d3020;font-size:14px;line-height:1.6;margin-bottom:4px;">${e(item)}</li>`).join('');
+
+  const coordsLink = trip.campsite?.coordinates
+    ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(trip.campsite.coordinates)}`
+    : null;
+
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f2ede0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+<div style="max-width:600px;margin:0 auto;background:#fff;">
+
+  <!-- Header -->
+  <div style="background:#2c2416;padding:32px 28px 24px;text-align:center;">
+    <div style="font-size:36px;margin-bottom:10px;">🐾</div>
+    <h1 style="color:#f2ede0;font-size:26px;font-weight:700;letter-spacing:-0.5px;margin:0 0 6px;">${e(trip.destination)}</h1>
+    ${trip.tagline ? `<p style="color:#9c8b6e;font-size:14px;font-style:italic;margin:0;">${e(trip.tagline)}</p>` : ''}
+  </div>
+
+  <!-- Meta pills -->
+  <div style="background:#3d3020;padding:10px 24px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">
+    ${trip.region ? `<span style="color:#b8aa88;font-size:13px;">📍 ${e(trip.region)}</span>` : ''}
+    ${trip.driveTime ? `<span style="color:#b8aa88;font-size:13px;">🚗 ${e(trip.driveTime)}</span>` : ''}
+    ${constraints?.tripDates ? `<span style="color:#b8aa88;font-size:13px;">📅 ${e(constraints.tripDates)}</span>` : ''}
+  </div>
+
+  <div style="padding:24px 28px;">
+
+    <!-- Dog Report -->
+    ${trip.dogReport ? `
+    <div style="background:#f6fbf4;border:1.5px solid #c3ddb8;border-radius:10px;padding:18px 20px;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+        <span style="font-size:20px;">🐕</span>
+        <span style="color:#2c2416;font-size:15px;font-weight:600;">Dog report</span>
+        ${trip.dogReport.rating ? `<span style="margin-left:auto;">${pill(trip.dogReport.rating, ratingColor(trip.dogReport.rating))}</span>` : ''}
+      </div>
+      <table style="width:100%;border-collapse:collapse;">
+        ${row('Swimming', trip.dogReport.swimming)}
+        ${row('Shade', trip.dogReport.shade)}
+        ${row('Terrain', trip.dogReport.terrain)}
+        ${row('Heat / elevation', trip.dogReport.heatConsiderations)}
+      </table>
+      ${trip.dogReport.notes ? `<p style="color:#4a3c28;font-size:13px;line-height:1.6;margin:12px 0 0;background:#edf7e8;border-radius:6px;padding:10px 12px;">${e(trip.dogReport.notes)}</p>` : ''}
+    </div>` : ''}
+
+    <!-- Campsite -->
+    ${trip.campsite ? `
+    <div style="margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="font-size:18px;">🏕️</span>
+        <span style="color:#2c2416;font-size:15px;font-weight:600;">The spot</span>
+      </div>
+      <table style="width:100%;border-collapse:collapse;">
+        ${row('Name', trip.campsite.name)}
+        ${row('Type', trip.campsite.type)}
+        ${trip.campsite.coordinates ? `<tr><td style="color:#9c8b6e;font-size:13px;font-weight:500;padding:7px 0;border-bottom:1px solid #e8e0ca;width:38%;vertical-align:top;">Coordinates</td><td style="color:#3d3020;font-size:13px;padding:7px 0 7px 12px;border-bottom:1px solid #e8e0ca;font-family:monospace;">${e(trip.campsite.coordinates)}${coordsLink ? ` &nbsp;<a href="${coordsLink}" style="color:#5c7a3e;font-size:12px;font-family:sans-serif;text-decoration:none;font-weight:600;">↗ Directions</a>` : ''}</td></tr>` : ''}
+      </table>
+      ${trip.campsite.description ? `<p style="color:#3d3020;font-size:14px;line-height:1.6;margin:10px 0 0;">${e(trip.campsite.description)}</p>` : ''}
+    </div>` : ''}
+
+    <!-- Route -->
+    ${trip.route ? `
+    <div style="margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="font-size:18px;">🚙</span>
+        <span style="color:#2c2416;font-size:15px;font-weight:600;">Rig report</span>
+        ${trip.route.rigRating ? `<span style="margin-left:auto;">${pill(trip.route.rigRating, ratingColor(trip.route.rigRating))}</span>` : ''}
+      </div>
+      <table style="width:100%;border-collapse:collapse;">
+        ${row('Route', trip.route.overview)}
+        ${row('Last miles', trip.route.lastMiles)}
+        ${row('Clearance', trip.route.clearanceNeeded)}
+      </table>
+    </div>` : ''}
+
+    <!-- Highlights + Watch-outs -->
+    ${(trip.highlights?.length || trip.watchOuts?.length) ? `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
+      ${trip.highlights?.length ? `
+      <div style="background:#f6fbf4;border:1px solid #c3ddb8;border-radius:8px;padding:14px;">
+        <div style="color:#2d6a2d;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">✓ Highlights</div>
+        <ul style="margin:0;padding-left:16px;">${listItems(trip.highlights)}</ul>
+      </div>` : ''}
+      ${trip.watchOuts?.length ? `
+      <div style="background:#fff8f8;border:1px solid #fecaca;border-radius:8px;padding:14px;">
+        <div style="color:#b91c1c;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">⚠ Watch out</div>
+        <ul style="margin:0;padding-left:16px;">${listItems(trip.watchOuts)}</ul>
+      </div>` : ''}
+    </div>` : ''}
+
+    <!-- Packing list -->
+    ${trip.packingItems?.length ? `
+    <div style="margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="font-size:18px;">🎒</span>
+        <span style="color:#2c2416;font-size:15px;font-weight:600;">Packing list</span>
+      </div>
+      <ul style="margin:0;padding-left:20px;">
+        ${listItems(trip.packingItems)}
+      </ul>
+    </div>` : ''}
+
+    <!-- Conditions -->
+    ${trip.conditions ? `
+    <div style="margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="font-size:18px;">🌤️</span>
+        <span style="color:#2c2416;font-size:15px;font-weight:600;">Conditions</span>
+      </div>
+      <table style="width:100%;border-collapse:collapse;">
+        ${row('Best season', trip.conditions.bestSeason)}
+        ${row('Current notes', trip.conditions.currentNotes)}
+        ${row('Fire restrictions', trip.conditions.fireRestrictions)}
+        ${row('Water', trip.conditions.waterAvailability)}
+      </table>
+    </div>` : ''}
+
+    <!-- CTA -->
+    <div style="text-align:center;margin:32px 0 16px;">
+      <a href="${appUrl}" style="display:inline-block;background:#5c7a3e;color:#fff;font-size:15px;font-weight:600;padding:14px 32px;border-radius:10px;text-decoration:none;">
+        🐾 Open trip in app
+      </a>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div style="background:#f2ede0;border-top:1px solid #d8cfa8;padding:18px 28px;text-align:center;">
+    <p style="color:#9c8b6e;font-size:12px;margin:0 0 4px;">Camp With My Dog &mdash; free trip planning for dog owners</p>
+    <p style="color:#b8aa88;font-size:11px;margin:0;">${appUrl}</p>
+  </div>
+
+</div>
+</body>
+</html>`;
+}
+
 // Serve built client in production
 app.use(express.static(path.join(__dirname, 'client/dist')));
 app.get('*', (req, res) => {

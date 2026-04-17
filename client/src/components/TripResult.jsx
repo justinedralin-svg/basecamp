@@ -86,6 +86,75 @@ function CoordsRow({ coords }) {
   );
 }
 
+function EmailPlan({ trip, constraints }) {
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState('idle'); // idle | sending | sent | error
+  const [errorMsg, setErrorMsg] = useState('');
+
+  async function handleSend(e) {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setStatus('sending');
+    try {
+      const res = await fetch('/api/send-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), trip, constraints }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send');
+      setStatus('sent');
+      trackEvent('plan_emailed');
+    } catch (err) {
+      setErrorMsg(err.message);
+      setStatus('error');
+    }
+  }
+
+  if (status === 'sent') return (
+    <div className="fade-in" style={{ background: 'rgba(92,122,62,0.07)', border: '1px solid rgba(92,122,62,0.25)', borderRadius: 10, padding: '14px 18px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+      <span style={{ fontSize: 20 }}>✉️</span>
+      <div>
+        <div style={{ color: '#2d6a2d', fontWeight: 600, fontSize: 14 }}>Plan sent!</div>
+        <div style={{ color: '#6b5c42', fontSize: 13 }}>Check your inbox — the full trip is on its way to {email}.</div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ background: '#faf7f0', border: '1px solid #d8cfa8', borderRadius: 10, padding: '16px 18px', marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+        <span style={{ fontSize: 18 }}>📧</span>
+        <span style={{ color: '#2c2416', fontWeight: 600, fontSize: 14 }}>Email this plan to yourself</span>
+      </div>
+      <p style={{ color: '#9c8b6e', fontSize: 13, margin: '0 0 12px', lineHeight: 1.5 }}>
+        Get the full trip plan — map coordinates, packing list, dog report — straight to your inbox.
+      </p>
+      <form onSubmit={handleSend} style={{ display: 'flex', gap: 8 }}>
+        <input
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          placeholder="your@email.com"
+          required
+          style={{ flex: 1, padding: '9px 12px', fontSize: 14, borderRadius: 7, border: '1px solid #c8bc96', background: '#fff', color: '#2c2416', outline: 'none' }}
+        />
+        <button
+          type="submit"
+          className="btn-primary"
+          disabled={status === 'sending'}
+          style={{ padding: '9px 18px', fontSize: 14, whiteSpace: 'nowrap', opacity: status === 'sending' ? 0.7 : 1 }}
+        >
+          {status === 'sending' ? 'Sending…' : 'Send →'}
+        </button>
+      </form>
+      {status === 'error' && (
+        <div style={{ color: '#b91c1c', fontSize: 12, marginTop: 7 }}>{errorMsg}</div>
+      )}
+    </div>
+  );
+}
+
 function ShareAppNudge({ destination }) {
   const [dismissed, setDismissed] = useState(false);
   if (dismissed) return null;
@@ -313,8 +382,11 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
         </div>
       )}
 
+      {/* Email plan */}
+      <EmailPlan trip={trip} constraints={entry.constraints} />
+
       {/* Actions */}
-      <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+      <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
         <button onClick={onPlanAnother} className="btn-ghost" style={{ flex: 1, padding: '12px' }}>
           Plan another trip
         </button>
