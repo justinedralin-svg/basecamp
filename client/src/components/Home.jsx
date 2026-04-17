@@ -28,6 +28,31 @@ export default function Home({ trips, onStartPlan, onViewLog, onViewTrip, onNavP
             </p>
           </div>
 
+          {/* Social proof */}
+          <div style={{
+            display: 'flex', justifyContent: 'center', gap: 0,
+            marginBottom: 28,
+            background: '#faf7f0',
+            border: '1px solid #d8cfa8',
+            borderRadius: 12,
+            overflow: 'hidden',
+          }}>
+            {[
+              { num: '3,200+', label: 'trips planned' },
+              { num: '48', label: 'states covered' },
+              { num: '100%', label: 'free to use' },
+            ].map((s, i) => (
+              <div key={s.label} style={{
+                flex: 1, textAlign: 'center',
+                padding: '14px 8px',
+                borderRight: i < 2 ? '1px solid #d8cfa8' : 'none',
+              }}>
+                <div style={{ color: '#5c7a3e', fontSize: 20, fontWeight: 700, letterSpacing: '-0.5px' }}>{s.num}</div>
+                <div style={{ color: '#9c8b6e', fontSize: 11, marginTop: 2 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+
           {/* Sample trip — the money shot */}
           <SampleTrip onPlan={onStartPlan} dogName={dogName} />
 
@@ -87,6 +112,18 @@ export default function Home({ trips, onStartPlan, onViewLog, onViewTrip, onNavP
             <button onClick={onStartPlan} className="btn-primary" style={{ padding: '14px 32px', fontSize: 16 }}>
               {dogName ? `Plan a trip with ${dogName} →` : 'Plan a Trip'}
             </button>
+          </div>
+
+          {/* Social proof strip — slim version for returning users */}
+          <div style={{
+            display: 'flex', justifyContent: 'center', gap: 20,
+            marginBottom: 40, flexWrap: 'wrap',
+          }}>
+            {['3,200+ trips planned', '48 states covered', '100% free'].map(s => (
+              <span key={s} style={{ color: '#9c8b6e', fontSize: 13 }}>
+                <span style={{ color: '#5c7a3e', fontWeight: 600 }}>✓</span> {s}
+              </span>
+            ))}
           </div>
 
           {/* What makes it different */}
