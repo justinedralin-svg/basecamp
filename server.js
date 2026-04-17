@@ -124,7 +124,7 @@ You MUST respond with ONLY a valid JSON object — no markdown, no explanation b
  *   - Literal newlines / carriage returns / tabs inside strings  ← the main bug
  *   - Other control chars (0x00–0x1F) inside strings
  *   - Trailing commas before } or ]   e.g. ["a", "b",]
- *   - JS-style // line comments and /* block */ comments outside strings
+ *   - JS-style // line comments and block comments outside strings
  */
 function cleanJSON(raw) {
   // ── Pass 1: escape unescaped control characters inside string values ──────
