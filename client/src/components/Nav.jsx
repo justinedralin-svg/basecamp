@@ -1,7 +1,7 @@
 export default function Nav({ view, onNav, tripCount, hasProfile, dogName }) {
   return (
     <nav style={{
-      position: 'sticky', top: 0, zIndex: 50,
+      position: 'sticky', top: 0, zIndex: 500,
       background: 'rgba(36,28,16,0.96)',
       backdropFilter: 'blur(12px)',
       borderBottom: '1px solid #3d3020',
