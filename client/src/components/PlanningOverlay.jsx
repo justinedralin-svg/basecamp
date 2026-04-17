@@ -4,20 +4,20 @@ const BASE_MESSAGES = [
   { emoji: '🐾', text: 'Sniffing out dispersed sites off the beaten path…' },
   { emoji: '💧', text: 'Locating creek access and swimming holes…' },
   { emoji: '🌲', text: 'Checking shade coverage for afternoon naps…' },
-  { emoji: '🗺️', text: 'Plotting the route — checking your rig's clearance…' },
+  { emoji: '🗺️', text: "Plotting the route — checking your rig's clearance…" },
   { emoji: '🌡️', text: 'Running the heat index for {dog}…' },
   { emoji: '🐻', text: 'Checking recent bear activity reports…' },
   { emoji: '🌅', text: 'Finding the best sunrise view from camp…' },
   { emoji: '🔥', text: 'Scanning for fire restrictions and open roads…' },
   { emoji: '📡', text: 'Confirming emergency cell coverage at the site…' },
-  { emoji: '🪵', text: 'Almost there — writing {dog}'s trip report…' },
+  { emoji: '🪵', text: "Almost there — writing {dog}'s trip report…" },
 ];
 
 // Fun dog camping facts to show mid-wait
 const DOG_FACTS = [
   'Dogs navigate by smell — they can detect water sources up to a mile away.',
-  'Most BLM land allows dogs off-leash as long as they're under voice control.',
-  'A dog's paw pads can overheat on dark granite above 75°F.',
+  "Most BLM land allows dogs off-leash as long as they're under voice control.",
+  "A dog's paw pads can overheat on dark granite above 75°F.",
   'Bears are much more attracted to dog food than to dogs themselves.',
   'The Leave No Trace guideline for dogs: pack out all waste, even on dispersed land.',
   'Dogs sleep up to 50% better after a day of hiking than a day of rest.',
@@ -25,20 +25,14 @@ const DOG_FACTS = [
 
 export default function PlanningOverlay({ dogName, location }) {
   const [msgIndex, setMsgIndex] = useState(0);
-  const [progress, setProgress] = useState(0);
+  const [progress, setProgress] = useState(4); // start visible, not at zero
   const [factIndex] = useState(() => Math.floor(Math.random() * DOG_FACTS.length));
-  const [visible, setVisible] = useState(false);
 
   const dog = dogName || 'your pup';
   const messages = BASE_MESSAGES.map(m => ({
     ...m,
     text: m.text.replace(/\{dog\}/g, dog),
   }));
-
-  // Fade in on mount
-  useEffect(() => {
-    requestAnimationFrame(() => setVisible(true));
-  }, []);
 
   // Cycle through messages every 2.8s
   useEffect(() => {
@@ -66,15 +60,13 @@ export default function PlanningOverlay({ dogName, location }) {
 
   return (
     <div
-      className="fade-in"
       style={{
         position: 'fixed', inset: 0, zIndex: 300,
         background: '#f2ede0',
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
         padding: '32px 24px',
-        opacity: visible ? 1 : 0,
-        transition: 'opacity 0.3s ease',
+        animation: 'fadeIn 0.35s ease-out',
       }}
     >
       {/* Floating paw prints background */}

@@ -115,6 +115,22 @@ You MUST respond with ONLY a valid JSON object — no markdown, no explanation b
   }
 }`;
 
+/**
+ * Cleans common LLM JSON generation mistakes before parsing:
+ *   - Trailing commas in objects/arrays  e.g. { "a": 1, }
+ *   - JS-style // and block comments
+ *   - Unescaped literal newlines inside strings (replace with \n)
+ */
+function cleanJSON(raw) {
+  // 1. Strip JS-style // line comments (not inside strings)
+  let s = raw.replace(/("(?:[^"\\]|\\.)*")|\/\/[^\n]*/g, (m, str) => str || '');
+  // 2. Strip /* block */ comments
+  s = s.replace(/("(?:[^"\\]|\\.)*")|\/\*[\s\S]*?\*\//g, (m, str) => str || '');
+  // 3. Remove trailing commas before } or ]
+  s = s.replace(/,(\s*[}\]])/g, '$1');
+  return s;
+}
+
 app.post('/api/plan', rateLimit, async (req, res) => {
   const { constraints, changeRequest, originalTrip } = req.body;
 
@@ -156,12 +172,18 @@ app.post('/api/plan', rateLimit, async (req, res) => {
 
     let trip;
     try {
-      trip = JSON.parse(rawText);
+      trip = JSON.parse(cleanJSON(rawText));
     } catch (parseErr) {
-      // Try to extract JSON if there's extra text
+      // Try to extract just the JSON object if Claude added any extra text
       const match = rawText.match(/\{[\s\S]*\}/);
       if (match) {
-        trip = JSON.parse(match[0]);
+        try {
+          trip = JSON.parse(cleanJSON(match[0]));
+        } catch (e2) {
+          console.error('JSON after cleaning still invalid:', e2.message);
+          console.error('Raw snippet:', rawText.slice(0, 300));
+          throw new Error('Could not parse trip JSON from response');
+        }
       } else {
         throw new Error('Could not parse trip JSON from response');
       }
