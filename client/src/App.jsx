@@ -88,7 +88,7 @@ export default function App() {
       energyLevel: 'adventurous',
       campsiteType: 'any',
       weatherPrefs: { maxRainChance: null, minTempF: '', maxTempF: '', avoidWind: false },
-      vibe: 'Surprise me — pick somewhere great you think we'd love!',
+      vibe: "Surprise me — pick somewhere great you think we'd love!",
     };
 
     try {
