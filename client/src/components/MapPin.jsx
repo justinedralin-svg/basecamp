@@ -289,62 +289,6 @@ export default function MapPin({ coordinates, destination, campsiteName }) {
       ) : (
         <div style={{ position: 'relative' }}>
           <div ref={containerRef} style={{ height: 260, width: '100%' }} />
-
-          {/* Map app links */}
-          {resolvedCoords && (
-            <div style={{ position: 'absolute', bottom: 8, left: 8, zIndex: 1000, display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-              {/* Google Maps */}
-              <a
-                href={`https://www.google.com/maps?q=${resolvedCoords.lat},${resolvedCoords.lon}&ll=${resolvedCoords.lat},${resolvedCoords.lon}&z=13`}
-                target="_blank" rel="noopener noreferrer"
-                title="Open in Google Maps — save area offline before your trip"
-                style={{
-                  background: 'rgba(244,237,224,0.95)', border: '1px solid #c8bc96',
-                  borderRadius: 6, color: '#6b5c42', fontSize: 11, fontWeight: 600,
-                  padding: '4px 8px', textDecoration: 'none', backdropFilter: 'blur(4px)',
-                  display: 'flex', alignItems: 'center', gap: 3,
-                }}
-              >
-                <span style={{ fontSize: 12 }}>🗺</span> Google Maps
-              </a>
-
-              {/* Apple Maps */}
-              <a
-                href={`https://maps.apple.com/?q=${encodeURIComponent(campsiteName || destination || 'Camp')}&ll=${resolvedCoords.lat},${resolvedCoords.lon}&z=13`}
-                target="_blank" rel="noopener noreferrer"
-                title="Open in Apple Maps — save map for offline use"
-                style={{
-                  background: 'rgba(244,237,224,0.95)', border: '1px solid #c8bc96',
-                  borderRadius: 6, color: '#6b5c42', fontSize: 11, fontWeight: 600,
-                  padding: '4px 8px', textDecoration: 'none', backdropFilter: 'blur(4px)',
-                  display: 'flex', alignItems: 'center', gap: 3,
-                }}
-              >
-                <span style={{ fontSize: 12 }}>🍎</span> Apple Maps
-              </a>
-
-              {/* Gaia GPS — downloads GPX then opens Gaia */}
-              <button
-                onClick={() => {
-                  const name = campsiteName || destination || 'Camp';
-                  downloadGPX({ lat: resolvedCoords.lat, lon: resolvedCoords.lon, name });
-                  window.open(
-                    `https://www.gaiagps.com/map/?lat=${resolvedCoords.lat}&lon=${resolvedCoords.lon}&zoom=13`,
-                    '_blank'
-                  );
-                }}
-                title="Downloads waypoint GPX and opens Gaia GPS"
-                style={{
-                  background: 'rgba(244,237,224,0.95)', border: '1px solid #c8bc96',
-                  borderRadius: 6, color: '#6b5c42', fontSize: 11, fontWeight: 600,
-                  padding: '4px 8px', cursor: 'pointer', backdropFilter: 'blur(4px)',
-                  display: 'flex', alignItems: 'center', gap: 3,
-                }}
-              >
-                <span style={{ fontSize: 12 }}>📍</span> Gaia GPS
-              </button>
-            </div>
-          )}
         </div>
       )}
 
@@ -390,6 +334,38 @@ export default function MapPin({ coordinates, destination, campsiteName }) {
               fontSize: 11, padding: '3px 8px', cursor: 'pointer', whiteSpace: 'nowrap',
             }}>
               {copied ? '✓' : 'Copy'}
+            </button>
+            {/* Directions — Apple Maps on iOS, Google Maps everywhere else */}
+            <a
+              href={
+                /iPhone|iPad|iPod/i.test(navigator.userAgent)
+                  ? `https://maps.apple.com/?daddr=${resolvedCoords.lat},${resolvedCoords.lon}&dirflg=d`
+                  : `https://www.google.com/maps/dir/?api=1&destination=${resolvedCoords.lat},${resolvedCoords.lon}`
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                background: 'rgba(92,122,62,0.1)', border: '1px solid rgba(92,122,62,0.35)',
+                borderRadius: 5, color: '#5c7a3e', fontWeight: 600,
+                fontSize: 11, padding: '3px 8px', textDecoration: 'none', whiteSpace: 'nowrap',
+              }}
+            >
+              📍 Directions
+            </a>
+            {/* Gaia GPS — beloved by overlanders */}
+            <button
+              onClick={() => {
+                const name = campsiteName || destination || 'Camp';
+                downloadGPX({ lat: resolvedCoords.lat, lon: resolvedCoords.lon, name });
+                window.open(`https://www.gaiagps.com/map/?lat=${resolvedCoords.lat}&lon=${resolvedCoords.lon}&zoom=13`, '_blank');
+              }}
+              style={{
+                background: 'none', border: '1px solid #c8bc96',
+                borderRadius: 5, color: '#9c8b6e',
+                fontSize: 11, padding: '3px 8px', cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              Gaia GPS
             </button>
             <button onClick={() => { setShowSearch(v => !v); setSearchError(null); }} style={{
               background: 'none', border: '1px solid #c8bc96',
