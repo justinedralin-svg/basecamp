@@ -53,38 +53,14 @@ export default function Home({ trips, onStartPlan, onSurpriseMe, onViewLog, onVi
             ))}
           </div>
 
-          {/* Sample trip — the money shot */}
-          <SampleTrip onPlan={onStartPlan} dogName={dogName} />
-
-          {/* Steps — below the example, as secondary info */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
-            {STEPS.map((s, i) => (
-              <div key={s.label} className="card" style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{
-                  width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-                  background: 'rgba(92,122,62,0.12)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 16,
-                }}>
-                  {s.icon}
-                </div>
-                <div>
-                  <div style={{ color: '#9c8b6e', fontSize: 10, fontWeight: 600, marginBottom: 1 }}>STEP {i + 1}</div>
-                  <div style={{ color: '#2c2416', fontWeight: 600, fontSize: 13 }}>{s.label}</div>
-                  <div style={{ color: '#9c8b6e', fontSize: 12 }}>{s.desc}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* CTAs */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {/* CTAs — above the fold before sample trips */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 32 }}>
             <button
               onClick={onStartPlan}
               className="btn-primary"
               style={{ width: '100%', padding: '14px', fontSize: 15 }}
             >
-              🗺️ Plan my trip →
+              🗺️ Plan my first trip →
             </button>
             <button
               onClick={onSurpriseMe}
@@ -107,6 +83,30 @@ export default function Home({ trips, onStartPlan, onSurpriseMe, onViewLog, onVi
             >
               Add your dog first for better results
             </button>
+          </div>
+
+          {/* Sample trip — the money shot */}
+          <SampleTrip onPlan={onStartPlan} dogName={dogName} />
+
+          {/* Steps — below the example, as secondary info */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+            {STEPS.map((s, i) => (
+              <div key={s.label} className="card" style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                  background: 'rgba(92,122,62,0.12)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 16,
+                }}>
+                  {s.icon}
+                </div>
+                <div>
+                  <div style={{ color: '#9c8b6e', fontSize: 10, fontWeight: 600, marginBottom: 1 }}>STEP {i + 1}</div>
+                  <div style={{ color: '#2c2416', fontWeight: 600, fontSize: 13 }}>{s.label}</div>
+                  <div style={{ color: '#9c8b6e', fontSize: 12 }}>{s.desc}</div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       ) : (
