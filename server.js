@@ -116,19 +116,63 @@ You MUST respond with ONLY a valid JSON object — no markdown, no explanation b
 }`;
 
 /**
- * Cleans common LLM JSON generation mistakes before parsing:
- *   - Trailing commas in objects/arrays  e.g. { "a": 1, }
- *   - JS-style // and block comments
- *   - Unescaped literal newlines inside strings (replace with \n)
+ * Cleans common LLM JSON generation mistakes before parsing.
+ * Uses a char-by-char pass so it correctly tracks string boundaries.
+ *
+ * Handles:
+ *   - Literal newlines / carriage returns / tabs inside strings  ← the main bug
+ *   - Other control chars (0x00–0x1F) inside strings
+ *   - Trailing commas before } or ]   e.g. ["a", "b",]
+ *   - JS-style // line comments and /* block */ comments outside strings
  */
 function cleanJSON(raw) {
-  // 1. Strip JS-style // line comments (not inside strings)
-  let s = raw.replace(/("(?:[^"\\]|\\.)*")|\/\/[^\n]*/g, (m, str) => str || '');
-  // 2. Strip /* block */ comments
-  s = s.replace(/("(?:[^"\\]|\\.)*")|\/\*[\s\S]*?\*\//g, (m, str) => str || '');
-  // 3. Remove trailing commas before } or ]
-  s = s.replace(/,(\s*[}\]])/g, '$1');
-  return s;
+  // ── Pass 1: escape unescaped control characters inside string values ──────
+  let out = '';
+  let inString = false;
+  let i = 0;
+
+  while (i < raw.length) {
+    const ch = raw[i];
+
+    if (!inString) {
+      if (ch === '"') inString = true;
+      out += ch;
+      i++;
+    } else {
+      if (ch === '\\') {
+        // Already-escaped sequence — copy both chars verbatim
+        out += ch + (raw[i + 1] || '');
+        i += 2;
+      } else if (ch === '"') {
+        inString = false;
+        out += ch;
+        i++;
+      } else if (ch === '\n') {
+        out += '\\n';  // literal newline → JSON escape
+        i++;
+      } else if (ch === '\r') {
+        out += '\\r';
+        i++;
+      } else if (ch === '\t') {
+        out += '\\t';
+        i++;
+      } else if (ch.charCodeAt(0) < 0x20) {
+        i++; // drop other control chars silently
+      } else {
+        out += ch;
+        i++;
+      }
+    }
+  }
+
+  // ── Pass 2: strip JS-style comments (outside strings are now safe) ────────
+  out = out.replace(/("(?:[^"\\]|\\.)*")|\/\/[^\n]*/g,  (m, s) => s || '');
+  out = out.replace(/("(?:[^"\\]|\\.)*")|\/\*[\s\S]*?\*\//g, (m, s) => s || '');
+
+  // ── Pass 3: remove trailing commas before } or ] ─────────────────────────
+  out = out.replace(/,(\s*[}\]])/g, '$1');
+
+  return out;
 }
 
 app.post('/api/plan', rateLimit, async (req, res) => {
