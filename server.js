@@ -797,147 +797,99 @@ app.post('/api/send-plan', async (req, res) => {
 
 function buildTripEmail({ trip, constraints, appUrl }) {
   const e = s => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const row = (label, value) => value ? `
-    <tr>
-      <td style="color:#9c8b6e;font-size:13px;font-weight:500;padding:7px 0 7px 0;border-bottom:1px solid #e8e0ca;width:38%;vertical-align:top;">${e(label)}</td>
-      <td style="color:#3d3020;font-size:14px;padding:7px 0 7px 12px;border-bottom:1px solid #e8e0ca;line-height:1.5;">${e(value)}</td>
-    </tr>` : '';
-
-  const pill = (text, color) => `<span style="display:inline-block;background:${color}22;color:${color};border:1px solid ${color}44;border-radius:20px;font-size:12px;font-weight:600;padding:2px 10px;">${e(text)}</span>`;
-
-  const ratingColor = r => ({ Excellent:'#2d6a2d', Good:'#2d6a2d', Fair:'#b45309', Challenging:'#b91c1c', Easy:'#2d6a2d', Moderate:'#b45309', Technical:'#b91c1c' })[r] || '#6b5c42';
-
-  const listItems = arr => (arr || []).map(item => `
-    <li style="color:#3d3020;font-size:14px;line-height:1.6;margin-bottom:4px;">${e(item)}</li>`).join('');
 
   const coordsLink = trip.campsite?.coordinates
     ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(trip.campsite.coordinates)}`
     : null;
 
+  const dogStats = [
+    trip.dogReport?.swimming && { icon: '🏊', label: 'Swimming', val: trip.dogReport.swimming },
+    trip.dogReport?.shade    && { icon: '🌲', label: 'Shade',    val: trip.dogReport.shade },
+    trip.dogReport?.terrain  && { icon: '🥾', label: 'Terrain',  val: trip.dogReport.terrain },
+  ].filter(Boolean);
+
+  const packRows = (trip.packingItems || []).map(item =>
+    `<tr><td style="padding:5px 0;color:#3d3020;font-size:14px;line-height:1.5;border-bottom:1px solid #ede8dc;">☐ &nbsp;${e(item)}</td></tr>`
+  ).join('');
+
   return `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f2ede0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-<div style="max-width:600px;margin:0 auto;background:#fff;">
+<div style="max-width:560px;margin:0 auto;background:#fff;">
 
   <!-- Header -->
-  <div style="background:#2c2416;padding:32px 28px 24px;text-align:center;">
-    <div style="font-size:36px;margin-bottom:10px;">🐾</div>
-    <h1 style="color:#f2ede0;font-size:26px;font-weight:700;letter-spacing:-0.5px;margin:0 0 6px;">${e(trip.destination)}</h1>
-    ${trip.tagline ? `<p style="color:#9c8b6e;font-size:14px;font-style:italic;margin:0;">${e(trip.tagline)}</p>` : ''}
+  <div style="background:#2c2416;padding:28px 24px 20px;text-align:center;">
+    <div style="font-size:32px;margin-bottom:8px;">🐾</div>
+    <h1 style="color:#f2ede0;font-size:24px;font-weight:700;letter-spacing:-0.5px;margin:0 0 5px;">${e(trip.destination)}</h1>
+    ${trip.tagline ? `<p style="color:#9c8b6e;font-size:13px;font-style:italic;margin:0;">${e(trip.tagline)}</p>` : ''}
+    <div style="margin-top:12px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap;">
+      ${trip.driveTime ? `<span style="color:#b8aa88;font-size:12px;">🚗 ${e(trip.driveTime)}</span>` : ''}
+      ${constraints?.tripDates ? `<span style="color:#b8aa88;font-size:12px;">📅 ${e(constraints.tripDates)}</span>` : ''}
+    </div>
   </div>
 
-  <!-- Meta pills -->
-  <div style="background:#3d3020;padding:10px 24px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">
-    ${trip.region ? `<span style="color:#b8aa88;font-size:13px;">📍 ${e(trip.region)}</span>` : ''}
-    ${trip.driveTime ? `<span style="color:#b8aa88;font-size:13px;">🚗 ${e(trip.driveTime)}</span>` : ''}
-    ${constraints?.tripDates ? `<span style="color:#b8aa88;font-size:13px;">📅 ${e(constraints.tripDates)}</span>` : ''}
-  </div>
+  <div style="padding:20px 24px;">
 
-  <div style="padding:24px 28px;">
+    <!-- Campsite + directions -->
+    <div style="background:#f6f3ec;border-radius:8px;padding:14px 16px;margin-bottom:16px;">
+      <div style="color:#9c8b6e;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">📍 The spot</div>
+      <div style="color:#2c2416;font-size:16px;font-weight:600;margin-bottom:2px;">${e(trip.campsite?.name || trip.destination)}</div>
+      ${trip.campsite?.type ? `<div style="color:#9c8b6e;font-size:13px;margin-bottom:8px;">${e(trip.campsite.type)}</div>` : ''}
+      ${trip.campsite?.coordinates ? `
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <span style="color:#6b5c42;font-size:13px;font-family:monospace;">${e(trip.campsite.coordinates)}</span>
+        ${coordsLink ? `<a href="${coordsLink}" style="display:inline-block;background:#5c7a3e;color:#fff;font-size:13px;font-weight:600;padding:7px 16px;border-radius:20px;text-decoration:none;">📍 Get directions</a>` : ''}
+      </div>` : ''}
+    </div>
 
-    <!-- Dog Report -->
+    <!-- Dog report -->
     ${trip.dogReport ? `
-    <div style="background:#f6fbf4;border:1.5px solid #c3ddb8;border-radius:10px;padding:18px 20px;margin-bottom:20px;">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
-        <span style="font-size:20px;">🐕</span>
-        <span style="color:#2c2416;font-size:15px;font-weight:600;">Dog report</span>
-        ${trip.dogReport.rating ? `<span style="margin-left:auto;">${pill(trip.dogReport.rating, ratingColor(trip.dogReport.rating))}</span>` : ''}
-      </div>
-      <table style="width:100%;border-collapse:collapse;">
-        ${row('Swimming', trip.dogReport.swimming)}
-        ${row('Shade', trip.dogReport.shade)}
-        ${row('Terrain', trip.dogReport.terrain)}
-        ${row('Heat / elevation', trip.dogReport.heatConsiderations)}
-      </table>
-      ${trip.dogReport.notes ? `<p style="color:#4a3c28;font-size:13px;line-height:1.6;margin:12px 0 0;background:#edf7e8;border-radius:6px;padding:10px 12px;">${e(trip.dogReport.notes)}</p>` : ''}
+    <div style="background:#f6fbf4;border:1px solid #c3ddb8;border-radius:8px;padding:14px 16px;margin-bottom:16px;">
+      <div style="color:#9c8b6e;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">🐕 Dog report ${trip.dogReport.rating ? `· <span style="color:#2d6a2d">${e(trip.dogReport.rating)}</span>` : ''}</div>
+      ${dogStats.map(s => `
+        <div style="margin-bottom:7px;">
+          <span style="font-size:13px;">${s.icon}</span>
+          <span style="color:#9c8b6e;font-size:12px;font-weight:500;margin:0 6px;">${s.label}</span>
+          <span style="color:#3d3020;font-size:13px;">${e(s.val)}</span>
+        </div>`).join('')}
+      ${trip.dogReport.notes ? `<div style="color:#4a3c28;font-size:13px;line-height:1.5;margin-top:10px;padding-top:10px;border-top:1px solid #d4edcc;">${e(trip.dogReport.notes)}</div>` : ''}
     </div>` : ''}
 
-    <!-- Campsite -->
-    ${trip.campsite ? `
-    <div style="margin-bottom:20px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-        <span style="font-size:18px;">🏕️</span>
-        <span style="color:#2c2416;font-size:15px;font-weight:600;">The spot</span>
-      </div>
-      <table style="width:100%;border-collapse:collapse;">
-        ${row('Name', trip.campsite.name)}
-        ${row('Type', trip.campsite.type)}
-        ${trip.campsite.coordinates ? `<tr><td style="color:#9c8b6e;font-size:13px;font-weight:500;padding:7px 0;border-bottom:1px solid #e8e0ca;width:38%;vertical-align:top;">Coordinates</td><td style="color:#3d3020;font-size:13px;padding:7px 0 7px 12px;border-bottom:1px solid #e8e0ca;font-family:monospace;">${e(trip.campsite.coordinates)}${coordsLink ? ` &nbsp;<a href="${coordsLink}" style="color:#5c7a3e;font-size:12px;font-family:sans-serif;text-decoration:none;font-weight:600;">↗ Directions</a>` : ''}</td></tr>` : ''}
-      </table>
-      ${trip.campsite.description ? `<p style="color:#3d3020;font-size:14px;line-height:1.6;margin:10px 0 0;">${e(trip.campsite.description)}</p>` : ''}
-    </div>` : ''}
-
-    <!-- Route -->
-    ${trip.route ? `
-    <div style="margin-bottom:20px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-        <span style="font-size:18px;">🚙</span>
-        <span style="color:#2c2416;font-size:15px;font-weight:600;">Rig report</span>
-        ${trip.route.rigRating ? `<span style="margin-left:auto;">${pill(trip.route.rigRating, ratingColor(trip.route.rigRating))}</span>` : ''}
-      </div>
-      <table style="width:100%;border-collapse:collapse;">
-        ${row('Route', trip.route.overview)}
-        ${row('Last miles', trip.route.lastMiles)}
-        ${row('Clearance', trip.route.clearanceNeeded)}
-      </table>
-    </div>` : ''}
-
-    <!-- Highlights + Watch-outs -->
+    <!-- Highlights + Watch-outs side by side -->
     ${(trip.highlights?.length || trip.watchOuts?.length) ? `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
-      ${trip.highlights?.length ? `
-      <div style="background:#f6fbf4;border:1px solid #c3ddb8;border-radius:8px;padding:14px;">
-        <div style="color:#2d6a2d;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">✓ Highlights</div>
-        <ul style="margin:0;padding-left:16px;">${listItems(trip.highlights)}</ul>
-      </div>` : ''}
-      ${trip.watchOuts?.length ? `
-      <div style="background:#fff8f8;border:1px solid #fecaca;border-radius:8px;padding:14px;">
-        <div style="color:#b91c1c;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">⚠ Watch out</div>
-        <ul style="margin:0;padding-left:16px;">${listItems(trip.watchOuts)}</ul>
-      </div>` : ''}
-    </div>` : ''}
+    <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+      <tr style="vertical-align:top;">
+        ${trip.highlights?.length ? `
+        <td style="width:50%;padding-right:8px;">
+          <div style="color:#2d6a2d;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:7px;">✓ Highlights</div>
+          ${trip.highlights.map(h => `<div style="color:#3d3020;font-size:13px;line-height:1.5;margin-bottom:5px;padding-left:10px;border-left:2px solid #c3ddb8;">${e(h)}</div>`).join('')}
+        </td>` : ''}
+        ${trip.watchOuts?.length ? `
+        <td style="width:50%;padding-left:8px;">
+          <div style="color:#b91c1c;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:7px;">⚠ Watch out</div>
+          ${trip.watchOuts.map(w => `<div style="color:#3d3020;font-size:13px;line-height:1.5;margin-bottom:5px;padding-left:10px;border-left:2px solid #fca5a5;">${e(w)}</div>`).join('')}
+        </td>` : ''}
+      </tr>
+    </table>` : ''}
 
     <!-- Packing list -->
     ${trip.packingItems?.length ? `
-    <div style="margin-bottom:20px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-        <span style="font-size:18px;">🎒</span>
-        <span style="color:#2c2416;font-size:15px;font-weight:600;">Packing list</span>
-      </div>
-      <ul style="margin:0;padding-left:20px;">
-        ${listItems(trip.packingItems)}
-      </ul>
-    </div>` : ''}
-
-    <!-- Conditions -->
-    ${trip.conditions ? `
-    <div style="margin-bottom:20px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-        <span style="font-size:18px;">🌤️</span>
-        <span style="color:#2c2416;font-size:15px;font-weight:600;">Conditions</span>
-      </div>
-      <table style="width:100%;border-collapse:collapse;">
-        ${row('Best season', trip.conditions.bestSeason)}
-        ${row('Current notes', trip.conditions.currentNotes)}
-        ${row('Fire restrictions', trip.conditions.fireRestrictions)}
-        ${row('Water', trip.conditions.waterAvailability)}
-      </table>
+    <div style="margin-bottom:16px;">
+      <div style="color:#9c8b6e;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">🎒 Packing list</div>
+      <table style="width:100%;border-collapse:collapse;">${packRows}</table>
     </div>` : ''}
 
     <!-- CTA -->
-    <div style="text-align:center;margin:32px 0 16px;">
-      <a href="${appUrl}" style="display:inline-block;background:#5c7a3e;color:#fff;font-size:15px;font-weight:600;padding:14px 32px;border-radius:10px;text-decoration:none;">
-        🐾 Open trip in app
-      </a>
+    <div style="text-align:center;padding:16px 0 8px;">
+      <a href="${appUrl}" style="display:inline-block;background:#5c7a3e;color:#fff;font-size:14px;font-weight:600;padding:12px 28px;border-radius:8px;text-decoration:none;">Open full trip in app →</a>
     </div>
 
   </div>
 
   <!-- Footer -->
-  <div style="background:#f2ede0;border-top:1px solid #d8cfa8;padding:18px 28px;text-align:center;">
-    <p style="color:#9c8b6e;font-size:12px;margin:0 0 4px;">Camp With My Dog &mdash; free trip planning for dog owners</p>
-    <p style="color:#b8aa88;font-size:11px;margin:0;">${appUrl}</p>
+  <div style="border-top:1px solid #e8e0ca;padding:14px 24px;text-align:center;">
+    <p style="color:#b8aa88;font-size:11px;margin:0;">Camp With My Dog &mdash; <a href="${appUrl}" style="color:#b8aa88;">${appUrl}</a></p>
   </div>
 
 </div>
