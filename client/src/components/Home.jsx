@@ -7,7 +7,7 @@ const STEPS = [
   { icon: '🌿', label: 'Leave it better', desc: 'File a condition report when you get back' },
 ];
 
-export default function Home({ trips, onStartPlan, onViewLog, onViewTrip, onNavProfile, dogName, dogNames }) {
+export default function Home({ trips, onStartPlan, onSurpriseMe, onViewLog, onViewTrip, onNavProfile, dogName, dogNames }) {
   const recent = trips.slice(0, 3);
   const isFirstTime = !dogName && trips.length === 0;
 
@@ -87,6 +87,21 @@ export default function Home({ trips, onStartPlan, onViewLog, onViewTrip, onNavP
               🗺️ Plan my trip →
             </button>
             <button
+              onClick={onSurpriseMe}
+              style={{
+                width: '100%', padding: '12px', fontSize: 14,
+                background: '#faf7f0',
+                border: '1.5px solid #d8cfa8',
+                borderRadius: 10, cursor: 'pointer',
+                color: '#5c7a3e', fontWeight: 600,
+                transition: 'border-color 0.15s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = '#5c7a3e'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = '#d8cfa8'}
+            >
+              🎲 Surprise me — just pick something great
+            </button>
+            <button
               onClick={onNavProfile}
               style={{ background: 'none', border: 'none', color: '#9c8b6e', fontSize: 13, cursor: 'pointer', padding: '6px', textDecoration: 'underline' }}
             >
@@ -109,9 +124,23 @@ export default function Home({ trips, onStartPlan, onViewLog, onViewTrip, onNavP
                 ? `Plan a dog-friendly camping trip for you and ${dogNames}. Safety info, maps, packing list — all in one place.`
                 : 'Tell us your rig, your dogs, and what you\'re after. Get a trip that actually fits — not just a list of campgrounds.'}
             </p>
-            <button onClick={onStartPlan} className="btn-primary" style={{ padding: '14px 32px', fontSize: 16 }}>
-              {dogName ? `Plan a trip with ${dogName} →` : 'Plan a Trip'}
-            </button>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button onClick={onStartPlan} className="btn-primary" style={{ padding: '14px 28px', fontSize: 15 }}>
+                {dogName ? `Plan a trip with ${dogName} →` : 'Plan a Trip →'}
+              </button>
+              <button
+                onClick={onSurpriseMe}
+                style={{
+                  padding: '14px 20px', fontSize: 15,
+                  background: '#faf7f0',
+                  border: '1.5px solid #d8cfa8',
+                  borderRadius: 10, cursor: 'pointer',
+                  color: '#5c7a3e', fontWeight: 600,
+                }}
+              >
+                🎲 Surprise me
+              </button>
+            </div>
           </div>
 
           {/* Social proof strip — slim version for returning users */}

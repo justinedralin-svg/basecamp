@@ -10,7 +10,10 @@ import ProfileForm from './components/ProfileForm.jsx';
 import TripStats from './components/TripStats.jsx';
 import { PrivacyPolicy, TermsOfService } from './components/LegalPage.jsx';
 import Toast from './components/Toast.jsx';
+import PlanningOverlay from './components/PlanningOverlay.jsx';
 import { getDogName, getDogNames } from './utils/profile.js';
+import { loadProfile } from './components/ProfileForm.jsx';
+import { trackEvent } from './utils/analytics.js';
 
 function getSharedTrip() {
   try {
@@ -51,9 +54,61 @@ export default function App() {
     saveTrips(trips);
   }, [trips]);
 
+  const [surpriseLoading, setSurpriseLoading] = useState(false);
+
   function handleProfileSaved() {
     setDogName(getDogName(null));
     setDogNames(getDogNames(null));
+  }
+
+  async function handleSurpriseMe() {
+    setSurpriseLoading(true);
+
+    // Build constraints from profile + next-weekend defaults
+    const profile = loadProfile() || {};
+    const today = new Date();
+    const daysToFriday = (5 - today.getDay() + 7) % 7 || 7;
+    const friday = new Date(today); friday.setDate(today.getDate() + daysToFriday);
+    const sunday = new Date(friday); sunday.setDate(friday.getDate() + 2);
+    const fmt = d => d.toISOString().split('T')[0];
+
+    const constraints = {
+      startingLocation: profile.startingLocation || 'California',
+      tripStartDate: fmt(friday),
+      tripEndDate: fmt(sunday),
+      tripDates: `${friday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}–${sunday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
+      tripLength: '2 nights',
+      rigType: profile.rigType || '',
+      campingStyle: profile.campingStyle || '',
+      roadExperience: profile.roadExperience || 'Moderate dirt roads (stock is fine)',
+      driveDistance: profile.driveDistance || '2–3 hours',
+      hasDogs: true,
+      dogs: profile.dogs?.length ? profile.dogs : [{ name: '', breed: '', size: 'Large (60–100 lbs)' }],
+      activities: ['🥾 Hiking', '🏊 Swimming'],
+      energyLevel: 'adventurous',
+      campsiteType: 'any',
+      weatherPrefs: { maxRainChance: null, minTempF: '', maxTempF: '', avoidWind: false },
+      vibe: 'Surprise me — pick somewhere great you think we'd love!',
+    };
+
+    try {
+      const res = await fetch('/api/plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ constraints }),
+      });
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); }
+      catch { throw new Error('Server timed out — try again.'); }
+      if (!res.ok) throw new Error(data.error || 'Something went wrong');
+      trackEvent('trip_planned');
+      handlePlanComplete(data.trip, constraints);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSurpriseLoading(false);
+    }
   }
 
   function handlePlanComplete(trip, constraints) {
@@ -192,6 +247,7 @@ export default function App() {
           <Home
             trips={trips}
             onStartPlan={() => nav('plan')}
+            onSurpriseMe={handleSurpriseMe}
             onViewLog={() => nav('log')}
             onViewTrip={handleViewTrip}
             onNavProfile={() => nav('profile')}
@@ -301,6 +357,14 @@ export default function App() {
             Send feedback
           </a>
         </footer>
+      )}
+
+      {/* Surprise Me loading overlay */}
+      {surpriseLoading && (
+        <PlanningOverlay
+          dogName={dogName}
+          location={(loadProfile() || {}).startingLocation}
+        />
       )}
 
       {/* Global toast notifications */}

@@ -86,6 +86,57 @@ function CoordsRow({ coords }) {
   );
 }
 
+function ShareAppNudge({ destination }) {
+  const [dismissed, setDismissed] = useState(false);
+  if (dismissed) return null;
+
+  const appUrl = window.location.origin;
+  const msg = `Just planned a camping trip to ${destination} using this free app — it builds the whole plan around your dog 🐾 ${appUrl}`;
+
+  async function handleShare() {
+    if (navigator.share) {
+      try { await navigator.share({ title: 'Camp With My Dog', text: msg, url: appUrl }); return; }
+      catch {}
+    }
+    try {
+      await navigator.clipboard.writeText(msg);
+      showToast('Message copied — paste it anywhere!');
+    } catch {
+      window.prompt('Copy and share:', msg);
+    }
+  }
+
+  return (
+    <div className="fade-in" style={{
+      marginTop: 16,
+      background: 'linear-gradient(135deg, #faf7f0, #f0ebe0)',
+      border: '1.5px solid #d8cfa8',
+      borderRadius: 12,
+      padding: '18px 20px',
+      position: 'relative',
+    }}>
+      <button
+        onClick={() => setDismissed(true)}
+        style={{ position: 'absolute', top: 10, right: 12, background: 'none', border: 'none', color: '#b8aa88', fontSize: 18, cursor: 'pointer', lineHeight: 1 }}
+      >×</button>
+      <div style={{ fontSize: 28, marginBottom: 8 }}>🐾</div>
+      <div style={{ color: '#2c2416', fontWeight: 700, fontSize: 15, marginBottom: 4 }}>
+        Know another dog owner?
+      </div>
+      <p style={{ color: '#6b5c42', fontSize: 13, lineHeight: 1.6, margin: '0 0 14px' }}>
+        Camp With My Dog is free — share it with a friend who's been Googling "dog-friendly camping" for months.
+      </p>
+      <button
+        onClick={handleShare}
+        className="btn-primary"
+        style={{ width: '100%', padding: '11px', fontSize: 14 }}
+      >
+        ⬆ Share Camp With My Dog
+      </button>
+    </div>
+  );
+}
+
 export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, readOnly }) {
   const { trip, id, date, status } = entry;
   const [saved, setSaved] = useState(false);
@@ -273,6 +324,10 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
           </button>
         )}
       </div>
+
+      {/* Post-save viral nudge — appears after saving */}
+      {saved && !readOnly && <ShareAppNudge destination={trip.destination} />}
+
     </div>
   );
 }
