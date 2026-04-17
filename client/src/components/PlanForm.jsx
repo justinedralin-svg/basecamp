@@ -3,6 +3,7 @@ import { loadProfile } from './ProfileForm.jsx';
 import { getDogName } from '../utils/profile.js';
 import { trackEvent } from '../utils/analytics.js';
 import RigSearch from './RigSearch.jsx';
+import PlanningOverlay from './PlanningOverlay.jsx';
 
 const ACTIVITIES = ['🥾 Hiking', '🏊 Swimming', '🎣 Fishing', '🧗 Climbing', '🚵 Mountain biking', '📷 Photography', '🌌 Stargazing', '😌 Just vibing'];
 const CAMPING_STYLES = ['Rooftop tent', 'Ground tent', 'Truck bed / sleeping platform', 'Van / car camping', 'Hammock'];
@@ -65,19 +66,6 @@ function buildInitialForm(prefill) {
   return { ...DEFAULT_FORM, ...profileDefaults, ...(prefill || {}) };
 }
 
-function getLoadingMessages() {
-  const name = getDogName(null);
-  return [
-    'Sniffing out the perfect spot…',
-    'Checking fire danger and weather…',
-    'Finding dog-friendly trails nearby…',
-    'Consulting the paw oracle…',
-    'Scouting dispersed sites off the beaten path…',
-    'Making sure there\'s a swimming hole…',
-    name ? `Checking if ${name} will approve…` : 'Checking if your pup will approve…',
-  ];
-}
-
 // Format two date strings into a human-readable range and night count
 function formatDates(start, end) {
   if (!start) return { tripDates: '', tripLength: '' };
@@ -115,9 +103,7 @@ function dogSummary(dogs) {
 }
 
 export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }) {
-  const LOADING_MESSAGES = getLoadingMessages();
   const [loading, setLoading] = useState(false);
-  const [loadingMsg, setLoadingMsg] = useState(LOADING_MESSAGES[0]);
   const [error, setError] = useState(null);
   const [rigExpanded, setRigExpanded] = useState(false);
   const [dogsExpanded, setDogsExpanded] = useState(false);
@@ -178,13 +164,6 @@ export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }
     e.preventDefault();
     setError(null);
     setLoading(true);
-    setLoadingMsg(LOADING_MESSAGES[0]);
-
-    let msgIndex = 1;
-    const msgInterval = setInterval(() => {
-      setLoadingMsg(LOADING_MESSAGES[msgIndex % LOADING_MESSAGES.length]);
-      msgIndex++;
-    }, 2500);
 
     const constraints = { ...form };
 
@@ -209,7 +188,6 @@ export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }
     } catch (err) {
       setError(err.message);
     } finally {
-      clearInterval(msgInterval);
       setLoading(false);
     }
   }
@@ -226,8 +204,18 @@ export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }
   // Today's date string for min date on picker
   const today = new Date().toISOString().split('T')[0];
 
+  // Derive dog name from form for the overlay
+  const firstDog = form.hasDogs && form.dogs?.[0];
+  const overlayDogName = firstDog?.name || getDogName(null) || null;
+
   return (
     <div className="fade-in">
+      {loading && (
+        <PlanningOverlay
+          dogName={overlayDogName}
+          location={form.startingLocation}
+        />
+      )}
       <div style={{ marginBottom: 24 }}>
         <button
           onClick={onBack}
@@ -546,13 +534,9 @@ export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }
           type="submit"
           className="btn-primary"
           disabled={loading}
-          style={{ width: '100%', padding: '16px', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
+          style={{ width: '100%', padding: '16px', fontSize: 16 }}
         >
-          {loading ? (
-            <><div className="spinner" />{loadingMsg}</>
-          ) : (
-            '🐾 Find our next adventure →'
-          )}
+          🐾 Find our next adventure →
         </button>
       </form>
     </div>

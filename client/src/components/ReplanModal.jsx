@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { trackEvent } from '../utils/analytics.js';
+import PlanningOverlay from './PlanningOverlay.jsx';
 
 export default function ReplanModal({ entry, onClose, onComplete }) {
   const [changeRequest, setChangeRequest] = useState('');
@@ -41,6 +42,10 @@ export default function ReplanModal({ entry, onClose, onComplete }) {
   const dogs = c.hasDogs && c.dogs?.length > 0
     ? c.dogs.map(d => d.name || 'Dog').join(' & ')
     : null;
+
+  if (loading) {
+    return <PlanningOverlay dogName={dogs} location={entry.constraints?.startingLocation} />;
+  }
 
   return (
     <div
