@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const { jsonrepair } = require('jsonrepair');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -172,6 +173,14 @@ function cleanJSON(raw) {
   // ── Pass 3: remove trailing commas before } or ] ─────────────────────────
   out = out.replace(/,(\s*[}\]])/g, '$1');
 
+  // ── Pass 4: insert missing commas between values on consecutive lines ─────
+  // Catches: "value"\n  "nextKey" → "value",\n  "nextKey"
+  // Only fires when there is NO comma already between them.
+  out = out.replace(
+    /(["}\]\d]|true|false|null)([ \t]*\n[ \t]*)(["{\[\d-]|true\b|false\b|null\b)/g,
+    '$1,$2$3',
+  );
+
   return out;
 }
 
@@ -200,7 +209,7 @@ app.post('/api/plan', rateLimit, async (req, res) => {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 2000,
+        max_tokens: 4096,
         system: SYSTEM_PROMPT,
         messages: [{ role: 'user', content: userPrompt }],
       }),
@@ -215,22 +224,31 @@ app.post('/api/plan', rateLimit, async (req, res) => {
     const rawText = json.content[0].text.trim();
 
     let trip;
-    try {
-      trip = JSON.parse(cleanJSON(rawText));
-    } catch (parseErr) {
-      // Try to extract just the JSON object if Claude added any extra text
+
+    // Helper: attempt parse with progressively more aggressive repair
+    function attemptParse(text) {
+      // Attempt 1: our own cleaner (fast, handles the most common cases)
+      try { return JSON.parse(cleanJSON(text)); } catch {}
+      // Attempt 2: jsonrepair — handles virtually all structural issues
+      try { return JSON.parse(jsonrepair(text)); } catch {}
+      // Attempt 3: cleanJSON then jsonrepair together
+      try { return JSON.parse(jsonrepair(cleanJSON(text))); } catch {}
+      return null;
+    }
+
+    trip = attemptParse(rawText);
+
+    if (!trip) {
+      // Last resort: extract the outermost {...} block first
       const match = rawText.match(/\{[\s\S]*\}/);
       if (match) {
-        try {
-          trip = JSON.parse(cleanJSON(match[0]));
-        } catch (e2) {
-          console.error('JSON after cleaning still invalid:', e2.message);
-          console.error('Raw snippet:', rawText.slice(0, 300));
-          throw new Error('Could not parse trip JSON from response');
-        }
-      } else {
-        throw new Error('Could not parse trip JSON from response');
+        trip = attemptParse(match[0]);
       }
+    }
+
+    if (!trip) {
+      console.error('All JSON repair attempts failed. Raw snippet:', rawText.slice(0, 400));
+      throw new Error('Could not parse trip JSON from response');
     }
 
     res.json({ trip });
