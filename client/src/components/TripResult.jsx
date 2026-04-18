@@ -2,6 +2,7 @@ import { useState } from 'react';
 import MapPin from './MapPin.jsx';
 import WeatherStrip from './WeatherStrip.jsx';
 import SafetySection from './SafetySection.jsx';
+import PackingChecklist from './PackingChecklist.jsx';
 import { getDogNames } from '../utils/profile.js';
 import ShareModal from './ShareModal.jsx';
 import { trackEvent } from '../utils/analytics.js';
@@ -210,6 +211,7 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
   const { trip, id, date, status } = entry;
   const [saved, setSaved] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [checkedItems, setCheckedItems] = useState([]);
 
   function handleSave() {
     trackEvent('trip_saved');
@@ -363,24 +365,13 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
       {/* Email plan — while they're excited about the dog report */}
       <EmailPlan trip={trip} constraints={entry.constraints} />
 
-      {/* Packing list */}
-      {trip.packingItems?.length > 0 && (
-        <Section icon="🎒" title="Pack list">
-          {trip.packingItems.map((item, i) => (
-            <div key={i} style={{
-              display: 'flex', alignItems: 'flex-start', gap: 10,
-              paddingBottom: 8, marginBottom: 8,
-              borderBottom: i < trip.packingItems.length - 1 ? '1px solid #e8e0ca' : 'none',
-            }}>
-              <span style={{
-                width: 18, height: 18, borderRadius: 4, flexShrink: 0,
-                border: '1.5px solid #c8bc96', marginTop: 1,
-                display: 'inline-block',
-              }} />
-              <span style={{ color: '#3d3020', fontSize: 14, lineHeight: 1.4 }}>{item}</span>
-            </div>
-          ))}
-        </Section>
+      {/* Packing list — interactive when viewing fresh result, TripDetail handles its own */}
+      {!readOnly && (
+        <PackingChecklist
+          trip={trip}
+          checked={checkedItems}
+          onCheckedChange={setCheckedItems}
+        />
       )}
 
       {/* Alternative */}
