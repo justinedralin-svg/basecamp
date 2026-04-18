@@ -44,20 +44,6 @@ const BASE_TILES = {
   },
 };
 
-const BLM_LEGEND = [
-  { color: '#F5C842', icon: '✓', label: 'BLM', sub: 'Free dispersed camping' },
-  { color: '#7BBF72', icon: '✓', label: 'National Forest', sub: 'Free dispersed camping' },
-  { color: '#B09FD4', icon: '✕', label: 'National Park', sub: 'No dispersed camping' },
-  { color: '#7AC8C8', icon: '–', label: 'Fish & Wildlife', sub: 'Restricted, check rules' },
-  { color: '#E8A06A', icon: '–', label: 'Tribal land', sub: 'Check access' },
-];
-
-const MVUM_LEGEND = [
-  { color: '#1a6cb5', lineStyle: 'solid', icon: '✓', label: 'All vehicles', sub: 'Passenger cars & trucks' },
-  { color: '#7B4F2E', lineStyle: 'solid', icon: '◐', label: 'High clearance', sub: 'Check for your rig' },
-  { color: '#E07B00', lineStyle: 'dashed', icon: '✕', label: 'OHV / ATV only', sub: 'Requires OHV permit' },
-  { color: '#999999', lineStyle: 'dotted', icon: '✕', label: 'Closed', sub: 'No motor vehicles' },
-];
 
 function OverlayToggle({ label, active, color, onClick }) {
   return (
@@ -316,8 +302,8 @@ export default function MapPin({ coordinates, destination, campsiteName }) {
             ))}
           </div>
           <div style={{ width: 1, height: 16, background: '#d8cfa8', flexShrink: 0 }} />
-          <OverlayToggle label="Public lands" active={blmOn} color="#f59e0b" onClick={() => setBlmOn(v => !v)} />
-          <OverlayToggle label="MVUM roads" active={mvumOn} color="#60a5fa" onClick={() => setMvumOn(v => !v)} />
+          <OverlayToggle label="Land ownership" active={blmOn} color="#f59e0b" onClick={() => setBlmOn(v => !v)} />
+          <OverlayToggle label="Road access" active={mvumOn} color="#60a5fa" onClick={() => setMvumOn(v => !v)} />
         </div>
 
         {/* Coords + actions */}
@@ -378,48 +364,22 @@ export default function MapPin({ coordinates, destination, campsiteName }) {
         )}
       </div>
 
-      {/* Legend — only when a layer is active */}
+      {/* Layer hints — one line only */}
       {(blmOn || mvumOn) && (
         <div style={{
           borderTop: '1px solid #d8cfa8', background: '#f0ebe0',
-          padding: '10px 14px',
-          display: 'flex', gap: 20, flexWrap: 'wrap',
+          padding: '6px 12px',
+          display: 'flex', gap: 16, flexWrap: 'wrap',
         }}>
           {blmOn && (
-            <div style={{ flex: 1, minWidth: 160 }}>
-              <div style={{ color: '#5c7a3e', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 7 }}>
-                Can I camp here?
-              </div>
-              {BLM_LEGEND.map(item => (
-                <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5 }}>
-                  <div style={{ width: 11, height: 11, borderRadius: 2, background: item.color, flexShrink: 0, opacity: 0.9 }} />
-                  <span style={{ color: item.icon === '✓' ? '#2d6a2d' : item.icon === '✕' ? '#b91c1c' : '#9c8b6e', fontSize: 11, fontWeight: 600, flexShrink: 0 }}>{item.icon}</span>
-                  <span style={{ color: '#6b5c42', fontSize: 11 }}>{item.label}</span>
-                  <span style={{ color: '#b8aa88', fontSize: 10, marginLeft: 2 }}>· {item.sub}</span>
-                </div>
-              ))}
-            </div>
+            <span style={{ color: '#9c8b6e', fontSize: 11 }}>
+              <span style={{ color: '#f59e0b', fontWeight: 700 }}>■</span> Land ownership — colored areas show who manages the land
+            </span>
           )}
-
           {mvumOn && (
-            <div style={{ flex: 1, minWidth: 160 }}>
-              <div style={{ color: '#60a5fa', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 7 }}>
-                Can my rig drive this?
-              </div>
-              {MVUM_LEGEND.map(item => (
-                <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5 }}>
-                  <div style={{
-                    width: 22, height: 3, borderRadius: 2, flexShrink: 0,
-                    background: item.lineStyle === 'solid' ? item.color : 'transparent',
-                    border: item.lineStyle !== 'solid' ? `2px ${item.lineStyle} ${item.color}` : 'none',
-                  }} />
-                  <span style={{ color: item.icon === '✓' ? '#2d6a2d' : item.icon === '✕' ? '#b91c1c' : '#f59e0b', fontSize: 11, fontWeight: 600, flexShrink: 0 }}>{item.icon}</span>
-                  <span style={{ color: '#6b5c42', fontSize: 11 }}>{item.label}</span>
-                  <span style={{ color: '#b8aa88', fontSize: 10, marginLeft: 2 }}>· {item.sub}</span>
-                </div>
-              ))}
-              <div style={{ color: '#4a5a4a', fontSize: 10, marginTop: 6 }}>Roads appear at zoom 10+ · labels at 12+</div>
-            </div>
+            <span style={{ color: '#9c8b6e', fontSize: 11 }}>
+              <span style={{ color: '#60a5fa', fontWeight: 700 }}>—</span> Road access — blue lines show motor vehicle routes (zoom in for detail)
+            </span>
           )}
         </div>
       )}
