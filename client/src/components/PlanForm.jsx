@@ -223,13 +223,28 @@ export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }
 
   // ── Step navigation ───────────────────────────────────────────────────────
   function nextStep() {
-    if (step < STEPS.length - 1) setStep(s => s + 1);
-    else handleSubmit();
+    if (step < STEPS.length - 1) {
+      const next = step + 1;
+      setStep(next);
+      trackEvent(`wizard_step_${next}`);
+    } else {
+      handleSubmit();
+    }
   }
 
   function prevStep() {
     if (step > 0) setStep(s => s - 1);
     else onBack();
+  }
+
+  function quickSubmit() {
+    trackEvent('quick_submit_used');
+    handleSubmit();
+  }
+
+  function skipToResults() {
+    trackEvent(`skip_used_step_${step}`);
+    handleSubmit();
   }
 
   const isLastStep = step === STEPS.length - 1;
@@ -305,7 +320,7 @@ export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }
             <div style={{ color: '#9c8b6e', fontSize: 12, marginBottom: 12 }}>We'll fill in smart defaults for your rig and preferences — or keep going to customise.</div>
             <button
               type="button"
-              onClick={handleSubmit}
+              onClick={quickSubmit}
               disabled={loading}
               className="btn-primary"
               style={{ width: '100%', padding: '13px', fontSize: 15 }}
@@ -550,7 +565,7 @@ export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }
       {!isLastStep && step > 0 && (
         <button
           type="button"
-          onClick={handleSubmit}
+          onClick={skipToResults}
           disabled={loading}
           style={{
             width: '100%',

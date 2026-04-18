@@ -247,8 +247,8 @@ export default function App() {
         {view === 'home' && (
           <Home
             trips={trips}
-            onStartPlan={() => nav('plan')}
-            onSurpriseMe={handleSurpriseMe}
+            onStartPlan={() => { trackEvent('form_started'); nav('plan'); }}
+            onSurpriseMe={() => { trackEvent('surprise_me_clicked'); handleSurpriseMe(); }}
             onViewLog={() => nav('log')}
             onViewTrip={handleViewTrip}
             onNavProfile={() => nav('profile')}
