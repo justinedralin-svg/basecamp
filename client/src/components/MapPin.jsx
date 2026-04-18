@@ -52,6 +52,8 @@ export default function MapPin({ coordinates, destination, campsiteName }) {
   const baseLayerRef = useRef(null);
 
   const [basemap, setBasemap] = useState('topo');
+  const [showRoads, setShowRoads] = useState(true);
+  const mvumLayerRef = useRef(null);
 
   const [resolvedCoords, setResolvedCoords] = useState(null);
   const [coordSource, setCoordSource] = useState(null);
@@ -120,6 +122,13 @@ export default function MapPin({ coordinates, destination, campsiteName }) {
     const bt = BASE_TILES[basemap];
     baseLayerRef.current = window.L.tileLayer(bt.url, { maxZoom: bt.maxZoom, attribution: bt.attribution }).addTo(map);
 
+    // USFS Motor Vehicle Use Map — forest road numbers (FR 9N18, etc.)
+    const mvum = window.L.tileLayer('/api/tiles/mvum/{z}/{y}/{x}', {
+      maxZoom: 16, opacity: 0.85, minZoom: 9,
+    });
+    if (showRoads && basemap === 'topo') mvum.addTo(map);
+    mvumLayerRef.current = mvum;
+
     const icon = window.L.divIcon({
       className: '',
       html: `<div style="
@@ -141,6 +150,7 @@ export default function MapPin({ coordinates, destination, campsiteName }) {
         mapRef.current.remove();
         mapRef.current = null;
         baseLayerRef.current = null;
+        mvumLayerRef.current = null;
       }
     };
   }, [resolvedCoords]);
@@ -154,6 +164,16 @@ export default function MapPin({ coordinates, destination, campsiteName }) {
     newBase.bringToBack();
     baseLayerRef.current = newBase;
   }, [basemap]);
+
+  // Toggle MVUM road overlay — only meaningful on topo
+  useEffect(() => {
+    if (!mapRef.current || !mvumLayerRef.current) return;
+    if (showRoads && basemap === 'topo') {
+      mvumLayerRef.current.addTo(mapRef.current);
+    } else {
+      mvumLayerRef.current.remove();
+    }
+  }, [showRoads, basemap]);
 
 
   async function copyCoords() {
@@ -336,6 +356,23 @@ export default function MapPin({ coordinates, destination, campsiteName }) {
             </button>
           ))}
         </div>
+
+        {/* Forest Roads overlay toggle — only useful on topo */}
+        {basemap === 'topo' && (
+          <button
+            onClick={() => setShowRoads(v => !v)}
+            style={{
+              background: showRoads ? 'rgba(92,122,62,0.12)' : 'transparent',
+              border: `1px solid ${showRoads ? 'rgba(92,122,62,0.4)' : '#c8bc96'}`,
+              borderRadius: 6, color: showRoads ? '#3d5c28' : '#9c8b6e',
+              fontSize: 11, fontWeight: 600,
+              padding: '4px 9px', cursor: 'pointer', flexShrink: 0,
+              transition: 'all 0.15s',
+            }}
+          >
+            🛣 Roads
+          </button>
+        )}
 
         {resolvedCoords && (
           <>
