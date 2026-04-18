@@ -78,8 +78,8 @@ export default function MapPin({ coordinates, destination, campsiteName }) {
   const mvumRef = useRef(null);
 
   const [basemap, setBasemap] = useState('topo');
-  const [blmOn, setBlmOn] = useState(true);
-  const [mvumOn, setMvumOn] = useState(true);
+  const [blmOn, setBlmOn] = useState(false);
+  const [mvumOn, setMvumOn] = useState(false);
 
   const [resolvedCoords, setResolvedCoords] = useState(null);
   const [coordSource, setCoordSource] = useState(null);
@@ -364,25 +364,6 @@ export default function MapPin({ coordinates, destination, campsiteName }) {
         )}
       </div>
 
-      {/* Layer hints — one line only */}
-      {(blmOn || mvumOn) && (
-        <div style={{
-          borderTop: '1px solid #d8cfa8', background: '#f0ebe0',
-          padding: '6px 12px',
-          display: 'flex', gap: 16, flexWrap: 'wrap',
-        }}>
-          {blmOn && (
-            <span style={{ color: '#9c8b6e', fontSize: 11 }}>
-              <span style={{ color: '#f59e0b', fontWeight: 700 }}>■</span> Land ownership — colored areas show who manages the land
-            </span>
-          )}
-          {mvumOn && (
-            <span style={{ color: '#9c8b6e', fontSize: 11 }}>
-              <span style={{ color: '#60a5fa', fontWeight: 700 }}>—</span> Road access — blue lines show motor vehicle routes (zoom in for detail)
-            </span>
-          )}
-        </div>
-      )}
 
       {/* Refine search */}
       {showSearch && (
