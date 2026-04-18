@@ -117,7 +117,7 @@ function EmailPlan({ trip, constraints }) {
       <span style={{ fontSize: 20 }}>✉️</span>
       <div>
         <div style={{ color: '#2d6a2d', fontWeight: 600, fontSize: 14 }}>Plan sent!</div>
-        <div style={{ color: '#6b5c42', fontSize: 13 }}>Check your inbox — the full trip is on its way to {email}.</div>
+        <div style={{ color: '#6b5c42', fontSize: 13 }}>Check your inbox — your trip plan is on its way. We'll occasionally send dog-friendly trip ideas too.</div>
       </div>
     </div>
   );
