@@ -59,6 +59,12 @@ Unlike generic trip planners, you go deep on:
 - CURRENT CONDITIONS: Season-appropriate fire restrictions, typical road conditions for the time of year, water availability
 - REAL SPECIFICITY: Actual campsite names, specific trailheads, named roads — not vague "the area around X"
 
+CAMPSITE SELECTION — CRITICAL RULES:
+1. DRIVE-TO BY DEFAULT: Always recommend a drive-to dispersed pullout off a named forest road (Forest Road / FR / NFSR / county dirt road into the forest). The vast majority of users want to drive to camp. Only suggest a hike-in or backpacking spot if the user's activity list explicitly includes hiking, backpacking, or similar.
+2. NEVER PIN NEAR FEE CAMPGROUNDS: Do NOT place your campsite recommendation at or within half a mile of a developed/fee campground (e.g., a USFS campground with numbered sites, fee booths, and reservations like "Herring Creek Campground", "Pine Flat Campground", etc.). If the only nearby option is a fee campground, pick a different area of the forest that has genuine dispersed pullouts.
+3. DISPERSED = ROADSIDE PULLOUT: True dispersed camping means pulling off a forest road, not a campground. Give the name of the forest road and approximate milepost or nearby landmark, not the name of the closest developed campground.
+4. GPS COORDINATES ON THE ROAD: Place coordinates at an actual pullout on or immediately adjacent to the named forest road — not in the middle of the forest, not at a trailhead, not at a fee campground entrance.
+
 You MUST respond with ONLY a valid JSON object — no markdown, no explanation before or after — with this exact structure:
 
 {
@@ -69,7 +75,7 @@ You MUST respond with ONLY a valid JSON object — no markdown, no explanation b
   "campsite": {
     "name": "Specific campsite or dispersed area name",
     "type": "Dispersed / Established / BLM / National Forest / State Park / etc.",
-    "coordinates": "Precise GPS coordinates in 'lat, lon' decimal format to 5+ decimal places if you know them with confidence — use the actual campsite or dispersed area, NOT the nearest town. Leave as empty string if you are not confident in the exact location.",
+    "coordinates": "Precise GPS coordinates in 'lat, lon' decimal format to 5+ decimal places — place these ON or immediately adjacent to a named forest road at the actual dispersed pullout, NOT at a developed campground, NOT in the middle of the forest, NOT at the nearest town. Leave as empty string if you are not confident in the exact road-side location.",
     "description": "2-3 sentences about the specific spot — views, feel, layout"
   },
   "route": {
@@ -289,15 +295,20 @@ app.get('/api/land-check', async (req, res) => {
   if (!lat || !lon) return res.status(400).json({ error: 'lat and lon required' });
 
   try {
-    const query = `[out:json][timeout:10];is_in(${lat},${lon});out tags;`;
+    // Combined query: land ownership (is_in) + nearby fee campgrounds (node around 500m)
+    const query = `[out:json][timeout:12];(is_in(${lat},${lon});node[tourism=camp_site](around:500,${lat},${lon});node[amenity=camping](around:500,${lat},${lon}););out tags;`;
     const r = await fetch('https://overpass-api.de/api/interpreter', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'CampWithMyDog/1.0' },
       body: `data=${encodeURIComponent(query)}`,
-      signal: AbortSignal.timeout(12000),
+      signal: AbortSignal.timeout(14000),
     });
     const data = await r.json();
-    const areas = data?.elements || [];
+    const elements = data?.elements || [];
+
+    // Separate: areas/relations (from is_in) vs nodes (campsite proximity)
+    const areas = elements.filter(e => e.type === 'area' || e.type === 'relation');
+    const nearbyNodes = elements.filter(e => e.type === 'node');
 
     // Score each area — pick the most specific public land match
     function classifyArea(tags) {
@@ -336,8 +347,19 @@ app.get('/api/land-check', async (req, res) => {
       if (result && (!best || result.score > best.score)) best = result;
     }
 
-    if (best) return res.json({ found: true, ...best });
-    res.json({ found: false });
+    // Check for nearby fee/developed campgrounds — flag as a caution even if land is public
+    const feeCampground = nearbyNodes.find(n => {
+      const tags = n.tags || {};
+      const name = (tags.name || '').toLowerCase();
+      const fee = (tags.fee || '').toLowerCase();
+      const access = (tags.access || '').toLowerCase();
+      // OSM marks fee campgrounds with fee=yes, or names ending in "Campground"
+      return fee === 'yes' || name.includes('campground') || access === 'private' || tags.reservations === 'required';
+    });
+    const nearFeeCampground = feeCampground ? (feeCampground.tags?.name || 'Developed campground nearby') : null;
+
+    if (best) return res.json({ found: true, ...best, nearFeeCampground });
+    res.json({ found: false, nearFeeCampground });
   } catch (err) {
     console.error('land-check error:', err.message);
     res.json({ found: false });
