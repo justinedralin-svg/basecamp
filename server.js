@@ -295,21 +295,15 @@ app.get('/api/land-check', async (req, res) => {
   if (!lat || !lon) return res.status(400).json({ error: 'lat and lon required' });
 
   try {
-    const overpassPost = (q, timeout = 12000) => fetch('https://overpass-api.de/api/interpreter', {
+    const query = `[out:json][timeout:10];is_in(${lat},${lon});out tags;`;
+    const r = await fetch('https://overpass-api.de/api/interpreter', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'CampWithMyDog/1.0' },
-      body: `data=${encodeURIComponent(q)}`,
-      signal: AbortSignal.timeout(timeout),
-    }).then(r => r.json()).catch(() => ({ elements: [] }));
-
-    // Run both queries in parallel — keep is_in standalone so it stays reliable
-    const [landData, campData] = await Promise.all([
-      overpassPost(`[out:json][timeout:10];is_in(${lat},${lon});out tags;`),
-      overpassPost(`[out:json][timeout:8];node[tourism=camp_site](around:500,${lat},${lon});out tags;`, 10000),
-    ]);
-
-    const areas = landData?.elements || [];
-    const nearbyNodes = campData?.elements || [];
+      body: `data=${encodeURIComponent(query)}`,
+      signal: AbortSignal.timeout(12000),
+    });
+    const data = await r.json();
+    const areas = data?.elements || [];
 
     // Score each area — pick the most specific public land match
     function classifyArea(tags) {
@@ -348,19 +342,8 @@ app.get('/api/land-check', async (req, res) => {
       if (result && (!best || result.score > best.score)) best = result;
     }
 
-    // Check for nearby fee/developed campgrounds — flag as a caution even if land is public
-    const feeCampground = nearbyNodes.find(n => {
-      const tags = n.tags || {};
-      const name = (tags.name || '').toLowerCase();
-      const fee = (tags.fee || '').toLowerCase();
-      const access = (tags.access || '').toLowerCase();
-      // OSM marks fee campgrounds with fee=yes, or names ending in "Campground"
-      return fee === 'yes' || name.includes('campground') || access === 'private' || tags.reservations === 'required';
-    });
-    const nearFeeCampground = feeCampground ? (feeCampground.tags?.name || 'Developed campground nearby') : null;
-
-    if (best) return res.json({ found: true, ...best, nearFeeCampground });
-    res.json({ found: false, nearFeeCampground });
+    if (best) return res.json({ found: true, ...best });
+    res.json({ found: false });
   } catch (err) {
     console.error('land-check error:', err.message);
     res.json({ found: false });

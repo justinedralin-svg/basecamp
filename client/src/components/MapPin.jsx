@@ -246,50 +246,59 @@ export default function MapPin({ coordinates, destination, campsiteName }) {
           <span style={{ color: '#9c8b6e', fontSize: 12 }}>Checking land ownership…</span>
         </div>
       )}
-      {!landLoading && landInfo && (() => {
-        const okClean = landInfo.found && landInfo.dispersed === 'ok' && !landInfo.nearFeeCampground;
-        const okWarn  = landInfo.found && landInfo.dispersed === 'ok' && !!landInfo.nearFeeCampground;
-        const no      = landInfo.found && landInfo.dispersed === 'no';
-        const icon    = okClean ? '✅' : okWarn ? '⚠️' : no ? '⛔' : '❓';
-        const headColor = okClean ? '#1a5c1a' : okWarn ? '#5c5010' : no ? '#9a3a10' : '#6b5c42';
-        const bg    = okClean ? 'rgba(45,106,45,0.09)' : okWarn ? 'rgba(155,130,30,0.09)' : no ? 'rgba(180,90,40,0.09)' : 'rgba(155,130,60,0.08)';
-        const border = okClean ? 'rgba(45,106,45,0.2)' : okWarn ? 'rgba(155,130,30,0.25)' : no ? 'rgba(180,90,40,0.2)' : '#d8cfa8';
-        const headline =
-          okClean ? `Free dispersed camping — ${landInfo.unitName || landInfo.manager}` :
-          okWarn  ? `Public land · fee campground nearby — ${landInfo.unitName || landInfo.manager}` :
-          no      ? `No dispersed camping — ${landInfo.unitName || landInfo.manager}` :
-          landInfo.found ? `${landInfo.unitName || landInfo.manager} — verify camping rules` :
-          'Land type unknown';
-        const sub =
-          okClean ? 'USFS/BLM public land · No permit needed for dispersed sites' :
-          okWarn  ? `${landInfo.nearFeeCampground} is a fee site — confirm pin is a free roadside pullout` :
-          no      ? 'Must use designated campsites only · Fees may apply' :
-          landInfo.found ? 'Land manager confirmed but dispersed rules unclear' :
-          'Couldn\'t confirm land ownership — verify before dispersed camping';
-        return (
-          <div style={{
-            padding: '10px 14px', background: bg,
-            borderBottom: `1px solid ${border}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 20, flexShrink: 0 }}>{icon}</span>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3, color: headColor }}>{headline}</div>
-                <div style={{ fontSize: 11, color: '#9c8b6e', marginTop: 1 }}>{sub}</div>
+      {!landLoading && landInfo && (
+        <div style={{
+          padding: '10px 14px',
+          background: landInfo.found && landInfo.dispersed === 'ok'
+            ? 'rgba(45,106,45,0.09)'
+            : landInfo.found && landInfo.dispersed === 'no'
+            ? 'rgba(180,90,40,0.09)'
+            : 'rgba(155,130,60,0.08)',
+          borderBottom: '1px solid',
+          borderColor: landInfo.found && landInfo.dispersed === 'ok'
+            ? 'rgba(45,106,45,0.2)'
+            : landInfo.found && landInfo.dispersed === 'no'
+            ? 'rgba(180,90,40,0.2)'
+            : '#d8cfa8',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 20, flexShrink: 0 }}>
+              {!landInfo.found ? '❓'
+                : landInfo.dispersed === 'ok' ? '✅'
+                : landInfo.dispersed === 'no' ? '⛔'
+                : '⚠️'}
+            </span>
+            <div>
+              <div style={{
+                fontSize: 13, fontWeight: 700, lineHeight: 1.3,
+                color: landInfo.found && landInfo.dispersed === 'ok' ? '#1a5c1a'
+                  : landInfo.found && landInfo.dispersed === 'no' ? '#9a3a10'
+                  : '#6b5c42',
+              }}>
+                {!landInfo.found && 'Land type unknown'}
+                {landInfo.found && landInfo.dispersed === 'ok' && `Free dispersed camping — ${landInfo.unitName || landInfo.manager}`}
+                {landInfo.found && landInfo.dispersed === 'no' && `No dispersed camping — ${landInfo.unitName || landInfo.manager}`}
+                {landInfo.found && landInfo.dispersed === 'unknown' && `${landInfo.unitName || landInfo.manager} — verify camping rules`}
+              </div>
+              <div style={{ fontSize: 11, color: '#9c8b6e', marginTop: 1 }}>
+                {!landInfo.found && 'Couldn\'t confirm land ownership — verify before dispersed camping'}
+                {landInfo.found && landInfo.dispersed === 'ok' && 'USFS/BLM public land · No permit needed for dispersed sites'}
+                {landInfo.found && landInfo.dispersed === 'no' && 'Must use designated campsites only · Fees may apply'}
+                {landInfo.found && landInfo.dispersed === 'unknown' && 'Land manager confirmed but dispersed rules unclear'}
               </div>
             </div>
-            {verifyUrl() && (
-              <a href={verifyUrl()} target="_blank" rel="noopener noreferrer" style={{
-                fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0,
-                color: '#9c8b6e', textDecoration: 'none',
-                border: '1px solid #d8cfa8', borderRadius: 5, padding: '3px 8px',
-                background: 'rgba(255,255,255,0.5)',
-              }}>Verify →</a>
-            )}
           </div>
-        );
-      })()}
+          {verifyUrl() && (
+            <a href={verifyUrl()} target="_blank" rel="noopener noreferrer" style={{
+              fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0,
+              color: '#9c8b6e', textDecoration: 'none',
+              border: '1px solid #d8cfa8', borderRadius: 5, padding: '3px 8px',
+              background: 'rgba(255,255,255,0.5)',
+            }}>Verify →</a>
+          )}
+        </div>
+      )}
 
       {/* Map */}
       {geocoding ? (
