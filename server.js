@@ -296,14 +296,33 @@ app.get('/api/land-check', async (req, res) => {
 
   try {
     const query = `[out:json][timeout:10];is_in(${lat},${lon});out tags;`;
-    const r = await fetch('https://overpass-api.de/api/interpreter', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'CampWithMyDog/1.0' },
-      body: `data=${encodeURIComponent(query)}`,
-      signal: AbortSignal.timeout(12000),
-    });
-    const data = await r.json();
-    const areas = data?.elements || [];
+    const OVERPASS_SERVERS = [
+      'https://overpass-api.de/api/interpreter',
+      'https://overpass.kumi.systems/api/interpreter',
+      'https://overpass.openstreetmap.ru/api/interpreter',
+    ];
+
+    async function tryOverpass(server) {
+      const r = await fetch(server, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'CampWithMyDog/1.0' },
+        body: `data=${encodeURIComponent(query)}`,
+        signal: AbortSignal.timeout(12000),
+      });
+      const data = await r.json();
+      return data?.elements || [];
+    }
+
+    let areas = [];
+    for (const server of OVERPASS_SERVERS) {
+      try {
+        areas = await tryOverpass(server);
+        if (areas.length > 0) break; // got useful data — stop trying
+        console.log(`[land-check] ${server} returned 0 elements, trying next`);
+      } catch (err) {
+        console.log(`[land-check] ${server} failed: ${err.message}, trying next`);
+      }
+    }
 
     // Score each area — pick the most specific public land match
     function classifyArea(tags) {
