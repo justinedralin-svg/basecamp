@@ -187,16 +187,17 @@ export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }
     setForm(prev => ({ ...prev, dogs: prev.dogs.filter((_, i) => i !== idx) }));
   }
 
-  async function attemptPlan(constraints) {
+  async function attemptPlan(body) {
     const res = await fetch('/api/plan', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ constraints }),
+      body,
     });
     const text = await res.text();
     let data;
     try { data = JSON.parse(text); } catch { return null; } // null = retry
-    if (!res.ok) throw new Error(data.error || 'Something went wrong');
+    if (!res.ok) throw new Error(data?.error || `Server error ${res.status}`);
+    if (!data?.trip) return null;
     return data;
   }
 
@@ -204,19 +205,20 @@ export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }
     setError(null);
     setLoading(true);
     const constraints = { ...form };
+
+    let body;
     try {
-      // First attempt
-      let data = await attemptPlan(constraints);
+      body = JSON.stringify({ constraints });
+    } catch (err) {
+      setError(`Couldn't prepare your request: ${err.message}`);
+      setLoading(false);
+      return;
+    }
 
-      // Silent retry — catches Render cold-start timeouts
-      if (!data) {
-        data = await attemptPlan(constraints);
-      }
-
-      if (!data) {
-        throw new Error('The server is warming up — wait a few seconds and try again.');
-      }
-
+    try {
+      let data = await attemptPlan(body);
+      if (!data) data = await attemptPlan(body); // silent retry on cold start
+      if (!data) throw new Error('The server is warming up — wait a few seconds and try again.');
       trackEvent('trip_planned');
       onComplete(data.trip, constraints);
     } catch (err) {

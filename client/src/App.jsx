@@ -92,22 +92,33 @@ export default function App() {
       vibe: "Surprise me — pick somewhere great you think we'd love!",
     };
 
+    // Serialize once up front — if this throws we surface the real error immediately
+    let body;
+    try {
+      body = JSON.stringify({ constraints });
+    } catch (err) {
+      showToast(`Couldn't prepare your request: ${err.message}`, 'error');
+      setSurpriseLoading(false);
+      return;
+    }
+
     async function attempt() {
       const res = await fetch('/api/plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ constraints }),
+        body,
       });
       const text = await res.text();
       let data;
       try { data = JSON.parse(text); } catch { return null; }
-      if (!res.ok) throw new Error(data.error || 'Something went wrong');
+      if (!res.ok) throw new Error(data?.error || `Server error ${res.status}`);
+      if (!data?.trip) return null; // empty response — retry
       return data;
     }
 
     try {
       let data = await attempt();
-      if (!data) data = await attempt(); // silent retry on cold start
+      if (!data) data = await attempt(); // silent retry on cold start / empty response
       if (!data) throw new Error('The server is warming up — wait a few seconds and try again.');
       trackEvent('trip_planned');
       handlePlanComplete(data.trip, constraints);
