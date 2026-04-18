@@ -288,81 +288,114 @@ app.get('/api/gpx', (req, res) => {
   res.send(gpx);
 });
 
-// Land ownership check via OpenStreetMap Overpass is_in query
-// Finds every OSM area that contains the point — reliable US public land coverage
+// Land ownership check
+// Primary: Nominatim reverse geocode (fast, reliable, purpose-built for this)
+// Fallback: Overpass is_in (same OSM data, slower/less reliable under load)
 app.get('/api/land-check', async (req, res) => {
   const { lat, lon } = req.query;
   if (!lat || !lon) return res.status(400).json({ error: 'lat and lon required' });
 
-  try {
+  // ── 1. Nominatim reverse geocode ───────────────────────────────────────────
+  async function checkViaNominatim() {
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1&zoom=10`;
+    const r = await fetch(url, {
+      headers: { 'User-Agent': 'CampWithMyDog/1.0 (campwithmydog.com)', Accept: 'application/json' },
+      signal: AbortSignal.timeout(8000),
+    });
+    const data = await r.json();
+
+    // display_name is comma-separated — each segment is a geographic component
+    // e.g. "FR 9N18, Angeles National Forest, Los Angeles County, California, US"
+    const parts = (data.display_name || '').split(',').map(p => p.trim());
+    const address = data.address || {};
+
+    // Helper: find a part containing a keyword, return it cleaned up
+    const findPart = (kw) => parts.find(p => p.toLowerCase().includes(kw.toLowerCase())) || null;
+    // Also check all address values (Nominatim sometimes puts it in a named key)
+    const findAddr = (kw) => Object.values(address).find(v => typeof v === 'string' && v.toLowerCase().includes(kw.toLowerCase())) || null;
+
+    const nf = findAddr('national forest') || findPart('national forest');
+    if (nf) return { found: true, manager: 'USFS', unitName: nf.replace(/,.*/, '').trim(), dispersed: 'ok' };
+
+    const blm = findAddr('bureau of land management') || findPart('bureau of land management') || findAddr(' blm ') || findPart('blm field');
+    if (blm) return { found: true, manager: 'BLM', unitName: blm.replace(/,.*/, '').trim() || 'BLM Land', dispersed: 'ok' };
+
+    const np = findAddr('national park') || findPart('national park');
+    if (np) return { found: true, manager: 'NPS', unitName: np.replace(/,.*/, '').trim(), dispersed: 'no' };
+
+    const nr = findAddr('national recreation area') || findPart('national recreation area');
+    if (nr) return { found: true, manager: 'NPS', unitName: nr.replace(/,.*/, '').trim(), dispersed: 'no' };
+
+    const ws = findAddr('wilderness') || findPart('wilderness');
+    if (ws) return { found: true, manager: 'Wilderness', unitName: ws.replace(/,.*/, '').trim(), dispersed: 'unknown' };
+
+    return null;
+  }
+
+  // ── 2. Overpass is_in fallback ─────────────────────────────────────────────
+  async function checkViaOverpass() {
     const query = `[out:json][timeout:10];is_in(${lat},${lon});out tags;`;
-    const OVERPASS_SERVERS = [
+    const SERVERS = [
       'https://overpass-api.de/api/interpreter',
       'https://overpass.kumi.systems/api/interpreter',
-      'https://overpass.openstreetmap.ru/api/interpreter',
     ];
 
-    async function tryOverpass(server) {
-      const r = await fetch(server, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'CampWithMyDog/1.0' },
-        body: `data=${encodeURIComponent(query)}`,
-        signal: AbortSignal.timeout(12000),
-      });
-      const data = await r.json();
-      return data?.elements || [];
-    }
-
-    let areas = [];
-    for (const server of OVERPASS_SERVERS) {
-      try {
-        areas = await tryOverpass(server);
-        if (areas.length > 0) break; // got useful data — stop trying
-        console.log(`[land-check] ${server} returned 0 elements, trying next`);
-      } catch (err) {
-        console.log(`[land-check] ${server} failed: ${err.message}, trying next`);
-      }
-    }
-
-    // Score each area — pick the most specific public land match
     function classifyArea(tags) {
       const name = tags.name || '';
       const boundary = tags.boundary || '';
       const operator = (tags.operator || tags['operator:en'] || '').toLowerCase();
       const leisure = tags.leisure || '';
       const protect = tags.protect_class || '';
-
-      // National Forest (USFS) — free dispersed camping
       if (boundary === 'national_forest') return { manager: 'USFS', unitName: name, dispersed: 'ok', score: 100 };
       if (operator.includes('forest service') || operator.includes('usda forest')) return { manager: 'USFS', unitName: name, dispersed: 'ok', score: 95 };
-
-      // BLM — free dispersed camping
       if (operator.includes('bureau of land management') || operator.includes('blm')) return { manager: 'BLM', unitName: name || 'BLM Land', dispersed: 'ok', score: 95 };
-
-      // National Park — no dispersed camping
       if (boundary === 'national_park' || operator.includes('national park service') || operator.includes('nps')) return { manager: 'NPS', unitName: name, dispersed: 'no', score: 90 };
-
-      // Protected areas by class
       if (boundary === 'protected_area') {
         const cls = parseInt(protect) || 0;
         if (cls <= 2) return { manager: 'Protected Area', unitName: name, dispersed: 'no', score: 70 };
         if (cls <= 5) return { manager: 'Protected Area', unitName: name, dispersed: 'unknown', score: 60 };
       }
-
-      // State/nature reserve
-      if (leisure === 'nature_reserve' || boundary === 'protected_area') return { manager: 'Protected Area', unitName: name, dispersed: 'unknown', score: 50 };
-
+      if (leisure === 'nature_reserve') return { manager: 'Protected Area', unitName: name, dispersed: 'unknown', score: 50 };
       return null;
     }
 
-    let best = null;
-    for (const area of areas) {
-      const result = classifyArea(area.tags || {});
-      if (result && (!best || result.score > best.score)) best = result;
+    for (const server of SERVERS) {
+      try {
+        const r = await fetch(server, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'CampWithMyDog/1.0' },
+          body: `data=${encodeURIComponent(query)}`,
+          signal: AbortSignal.timeout(12000),
+        });
+        const data = await r.json();
+        const areas = data?.elements || [];
+        let best = null;
+        for (const area of areas) {
+          const result = classifyArea(area.tags || {});
+          if (result && (!best || result.score > best.score)) best = result;
+        }
+        if (best) return { found: true, ...best };
+        if (areas.length > 0) return null; // got data but no match — don't try next server
+      } catch (err) {
+        console.log(`[land-check] Overpass ${server} failed: ${err.message}`);
+      }
+    }
+    return null;
+  }
+
+  try {
+    // Try Nominatim first — faster and more reliable
+    let result = await checkViaNominatim().catch(err => {
+      console.log(`[land-check] Nominatim failed: ${err.message}`);
+      return null;
+    });
+
+    // Fall back to Overpass if Nominatim didn't find a match
+    if (!result) {
+      result = await checkViaOverpass().catch(() => null);
     }
 
-    if (best) return res.json({ found: true, ...best });
-    res.json({ found: false });
+    res.json(result || { found: false });
   } catch (err) {
     console.error('land-check error:', err.message);
     res.json({ found: false });
