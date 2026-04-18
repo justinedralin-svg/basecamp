@@ -209,10 +209,13 @@ export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }
 
     const body = safeStringify({ constraints });
 
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+
     try {
       let data = await attemptPlan(body);
-      if (!data) data = await attemptPlan(body); // silent retry on cold start
-      if (!data) throw new Error('The server is warming up — wait a few seconds and try again.');
+      if (!data) { await sleep(4000); data = await attemptPlan(body); }
+      if (!data) { await sleep(8000); data = await attemptPlan(body); }
+      if (!data) throw new Error('The server is warming up — please try again in a few seconds.');
       trackEvent('trip_planned');
       onComplete(data.trip, constraints);
     } catch (err) {

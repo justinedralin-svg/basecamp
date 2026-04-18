@@ -111,10 +111,14 @@ export default function App() {
       return data;
     }
 
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+
     try {
+      // Up to 3 attempts with increasing delays — gives Render time to cold-start
       let data = await attempt();
-      if (!data) data = await attempt(); // silent retry on cold start / empty response
-      if (!data) throw new Error('The server is warming up — wait a few seconds and try again.');
+      if (!data) { await sleep(4000); data = await attempt(); }
+      if (!data) { await sleep(8000); data = await attempt(); }
+      if (!data) throw new Error('The server is warming up — please try again in a few seconds.');
       trackEvent('trip_planned');
       handlePlanComplete(data.trip, constraints);
     } catch (err) {
