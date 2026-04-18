@@ -854,14 +854,13 @@ app.post('/api/send-plan', async (req, res) => {
       html,
     });
 
-    // Add to audience for future trip ideas (non-fatal if it fails)
-    if (process.env.RESEND_AUDIENCE_ID) {
-      resend.contacts.create({
-        audienceId: process.env.RESEND_AUDIENCE_ID,
-        email,
-        unsubscribed: false,
-      }).catch(err => console.error('Contact add failed (non-fatal):', err.message));
-    }
+    // Notify owner of new signup (non-fatal)
+    resend.emails.send({
+      from: 'Camp With My Dog <hello@campwithmydog.com>',
+      to: 'hello@campwithmydog.com',
+      subject: `New signup: ${email}`,
+      html: `<p><strong>${email}</strong> just emailed their trip plan to <em>${trip.destination}</em>.</p><p>Reply to add them to your list.</p>`,
+    }).catch(err => console.error('Signup notify failed (non-fatal):', err.message));
 
     res.json({ ok: true });
   } catch (err) {
