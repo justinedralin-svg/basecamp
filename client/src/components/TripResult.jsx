@@ -263,7 +263,6 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
         />
         <Row label="Name" value={trip.campsite?.name} />
         <Row label="Type" value={trip.campsite?.type} />
-        <CoordsRow coords={trip.campsite?.coordinates} />
         {trip.campsite?.description && (
           <p style={{ color: '#3d3020', fontSize: 14, lineHeight: 1.6, margin: 0 }}>{trip.campsite.description}</p>
         )}
@@ -361,6 +360,9 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
         </div>
       )}
 
+      {/* Email plan — while they're excited about the dog report */}
+      <EmailPlan trip={trip} constraints={entry.constraints} />
+
       {/* Packing notes */}
       {trip.packingNotes && (
         <Section icon="🎒" title="Pack list notes">
@@ -381,9 +383,6 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
           )}
         </div>
       )}
-
-      {/* Email plan */}
-      <EmailPlan trip={trip} constraints={entry.constraints} />
 
       {/* Actions */}
       <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
