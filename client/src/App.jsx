@@ -92,7 +92,7 @@ export default function App() {
       vibe: "Surprise me — pick somewhere great you think we'd love!",
     };
 
-    try {
+    async function attempt() {
       const res = await fetch('/api/plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -100,9 +100,15 @@ export default function App() {
       });
       const text = await res.text();
       let data;
-      try { data = JSON.parse(text); }
-      catch { throw new Error('Server timed out — try again.'); }
+      try { data = JSON.parse(text); } catch { return null; }
       if (!res.ok) throw new Error(data.error || 'Something went wrong');
+      return data;
+    }
+
+    try {
+      let data = await attempt();
+      if (!data) data = await attempt(); // silent retry on cold start
+      if (!data) throw new Error('The server is warming up — wait a few seconds and try again.');
       trackEvent('trip_planned');
       handlePlanComplete(data.trip, constraints);
     } catch (err) {

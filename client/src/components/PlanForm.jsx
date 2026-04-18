@@ -187,24 +187,36 @@ export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }
     setForm(prev => ({ ...prev, dogs: prev.dogs.filter((_, i) => i !== idx) }));
   }
 
+  async function attemptPlan(constraints) {
+    const res = await fetch('/api/plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ constraints }),
+    });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch { return null; } // null = retry
+    if (!res.ok) throw new Error(data.error || 'Something went wrong');
+    return data;
+  }
+
   async function handleSubmit() {
     setError(null);
     setLoading(true);
     const constraints = { ...form };
     try {
-      const res = await fetch('/api/plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ constraints }),
-      });
-      const text = await res.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        throw new Error('The server took too long to respond. Try again — it usually works on the second attempt.');
+      // First attempt
+      let data = await attemptPlan(constraints);
+
+      // Silent retry — catches Render cold-start timeouts
+      if (!data) {
+        data = await attemptPlan(constraints);
       }
-      if (!res.ok) throw new Error(data.error || 'Something went wrong');
+
+      if (!data) {
+        throw new Error('The server is warming up — wait a few seconds and try again.');
+      }
+
       trackEvent('trip_planned');
       onComplete(data.trip, constraints);
     } catch (err) {

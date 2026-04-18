@@ -259,6 +259,9 @@ app.post('/api/plan', rateLimit, async (req, res) => {
   }
 });
 
+// Keep-alive health check
+app.get('/api/health', (req, res) => res.json({ ok: true }));
+
 // Weather endpoint — uses Open-Meteo (free, no API key)
 app.get('/api/weather', async (req, res) => {
   const { lat, lon, dates } = req.query;

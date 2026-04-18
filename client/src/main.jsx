@@ -8,6 +8,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>
 );
 
+// Keep Render server warm — ping every 9 min to prevent cold-start timeouts
+setInterval(() => fetch('/api/health').catch(() => {}), 9 * 60 * 1000);
+
 // Register service worker for PWA install support
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
