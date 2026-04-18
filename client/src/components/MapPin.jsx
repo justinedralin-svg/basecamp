@@ -45,41 +45,13 @@ const BASE_TILES = {
 };
 
 
-function OverlayToggle({ label, active, color, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        background: active ? `${color}18` : 'transparent',
-        border: `1px solid ${active ? color : '#c8bc96'}`,
-        borderRadius: 6,
-        color: active ? color : '#9c8b6e',
-        fontSize: 11, fontWeight: 600, padding: '4px 10px',
-        cursor: 'pointer', whiteSpace: 'nowrap',
-        display: 'flex', alignItems: 'center', gap: 5,
-        transition: 'all 0.15s',
-      }}
-    >
-      <span style={{
-        width: 8, height: 8, borderRadius: 2,
-        background: active ? color : '#c8bc96',
-        flexShrink: 0, display: 'inline-block',
-      }} />
-      {label}
-    </button>
-  );
-}
 
 export default function MapPin({ coordinates, destination, campsiteName }) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const baseLayerRef = useRef(null);
-  const blmRef = useRef(null);
-  const mvumRef = useRef(null);
 
   const [basemap, setBasemap] = useState('topo');
-  const [blmOn, setBlmOn] = useState(false);
-  const [mvumOn, setMvumOn] = useState(false);
 
   const [resolvedCoords, setResolvedCoords] = useState(null);
   const [coordSource, setCoordSource] = useState(null);
@@ -124,8 +96,6 @@ export default function MapPin({ coordinates, destination, campsiteName }) {
       mapRef.current.remove();
       mapRef.current = null;
       baseLayerRef.current = null;
-      blmRef.current = null;
-      mvumRef.current = null;
     }
 
     const map = window.L.map(containerRef.current, {
@@ -135,17 +105,6 @@ export default function MapPin({ coordinates, destination, campsiteName }) {
 
     const bt = BASE_TILES[basemap];
     baseLayerRef.current = window.L.tileLayer(bt.url, { maxZoom: bt.maxZoom, attribution: bt.attribution }).addTo(map);
-
-    const blm = window.L.tileLayer('/api/tiles/federal-lands/{z}/{y}/{x}', {
-      opacity: blmOn ? 0.45 : 0, maxZoom: 15,
-      errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
-    }).addTo(map);
-    blmRef.current = blm;
-
-    const mvum = window.L.tileLayer('/api/tiles/mvum/{z}/{y}/{x}', {
-      opacity: mvumOn ? 0.85 : 0, maxZoom: 17,
-    }).addTo(map);
-    mvumRef.current = mvum;
 
     const icon = window.L.divIcon({
       className: '',
@@ -168,8 +127,6 @@ export default function MapPin({ coordinates, destination, campsiteName }) {
         mapRef.current.remove();
         mapRef.current = null;
         baseLayerRef.current = null;
-        blmRef.current = null;
-        mvumRef.current = null;
       }
     };
   }, [resolvedCoords]);
@@ -184,9 +141,6 @@ export default function MapPin({ coordinates, destination, campsiteName }) {
     baseLayerRef.current = newBase;
   }, [basemap]);
 
-  // Toggle opacity on BLM/MVUM layers
-  useEffect(() => { if (blmRef.current) blmRef.current.setOpacity(blmOn ? 0.45 : 0); }, [blmOn]);
-  useEffect(() => { if (mvumRef.current) mvumRef.current.setOpacity(mvumOn ? 0.85 : 0); }, [mvumOn]);
 
   async function copyCoords() {
     if (!resolvedCoords) return;
@@ -278,67 +232,57 @@ export default function MapPin({ coordinates, destination, campsiteName }) {
         </div>
       )}
 
-      {/* Controls bar */}
+      {/* Controls bar — single row */}
       <div style={{
         borderTop: '1px solid #d8cfa8', background: '#f0ebe0',
-        padding: '8px 12px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        gap: 8, flexWrap: 'wrap',
+        padding: '7px 12px',
+        display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
       }}>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-          {/* Topo / Satellite pill */}
-          <div style={{ display: 'flex', border: '1px solid #c8bc96', borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
-            {['topo', 'satellite'].map(mode => (
-              <button key={mode} onClick={() => setBasemap(mode)} style={{
-                background: basemap === mode ? '#5c7a3e' : 'transparent',
-                border: 'none',
-                color: basemap === mode ? '#faf7f0' : '#9c8b6e',
-                fontSize: 11, fontWeight: 600,
-                padding: '4px 9px', cursor: 'pointer',
-                transition: 'all 0.15s',
-              }}>
-                {mode === 'topo' ? '🗺 Topo' : '🛰 Satellite'}
-              </button>
-            ))}
-          </div>
-          <div style={{ width: 1, height: 16, background: '#d8cfa8', flexShrink: 0 }} />
-          <OverlayToggle label="Land ownership" active={blmOn} color="#f59e0b" onClick={() => setBlmOn(v => !v)} />
-          <OverlayToggle label="Road access" active={mvumOn} color="#60a5fa" onClick={() => setMvumOn(v => !v)} />
+        {/* Topo / Satellite toggle */}
+        <div style={{ display: 'flex', border: '1px solid #c8bc96', borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
+          {['topo', 'satellite'].map(mode => (
+            <button key={mode} onClick={() => setBasemap(mode)} style={{
+              background: basemap === mode ? '#5c7a3e' : 'transparent',
+              border: 'none',
+              color: basemap === mode ? '#faf7f0' : '#9c8b6e',
+              fontSize: 11, fontWeight: 600,
+              padding: '4px 9px', cursor: 'pointer',
+              transition: 'all 0.15s',
+            }}>
+              {mode === 'topo' ? '🗺 Topo' : '🛰 Satellite'}
+            </button>
+          ))}
         </div>
 
-        {/* Coords + actions */}
         {resolvedCoords && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, flexWrap: 'wrap' }}>
-            <span style={{ color: '#9c8b6e', fontFamily: 'monospace', fontSize: 11 }}>
+          <>
+            <div style={{ width: 1, height: 14, background: '#d8cfa8', flexShrink: 0 }} />
+            <span style={{ color: '#9c8b6e', fontFamily: 'monospace', fontSize: 11, flexShrink: 0 }}>
               {resolvedCoords.lat.toFixed(5)}, {resolvedCoords.lon.toFixed(5)}
-              {coordSource !== 'ai' && <span style={{ marginLeft: 4 }}>· {coordSource}</span>}
             </span>
             <button onClick={copyCoords} style={{
               background: copied ? 'rgba(74,222,128,0.12)' : 'none',
-              border: `1px solid ${copied ? 'rgba(45,106,45,0.3)' : '#284228'}`,
+              border: `1px solid ${copied ? 'rgba(45,106,45,0.3)' : '#c8bc96'}`,
               borderRadius: 5, color: copied ? '#2d6a2d' : '#9c8b6e',
-              fontSize: 11, padding: '3px 8px', cursor: 'pointer', whiteSpace: 'nowrap',
+              fontSize: 11, padding: '3px 8px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
             }}>
               {copied ? '✓' : 'Copy'}
             </button>
-            {/* Directions — Apple Maps on iOS, Google Maps everywhere else */}
             <a
               href={
                 /iPhone|iPad|iPod/i.test(navigator.userAgent)
                   ? `https://maps.apple.com/?daddr=${resolvedCoords.lat},${resolvedCoords.lon}&dirflg=d`
                   : `https://www.google.com/maps/dir/?api=1&destination=${resolvedCoords.lat},${resolvedCoords.lon}`
               }
-              target="_blank"
-              rel="noopener noreferrer"
+              target="_blank" rel="noopener noreferrer"
               style={{
                 background: 'rgba(92,122,62,0.1)', border: '1px solid rgba(92,122,62,0.35)',
                 borderRadius: 5, color: '#5c7a3e', fontWeight: 600,
-                fontSize: 11, padding: '3px 8px', textDecoration: 'none', whiteSpace: 'nowrap',
+                fontSize: 11, padding: '3px 8px', textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0,
               }}
             >
               📍 Directions
             </a>
-            {/* Gaia GPS — beloved by overlanders */}
             <button
               onClick={() => {
                 const name = campsiteName || destination || 'Camp';
@@ -348,7 +292,7 @@ export default function MapPin({ coordinates, destination, campsiteName }) {
               style={{
                 background: 'none', border: '1px solid #c8bc96',
                 borderRadius: 5, color: '#9c8b6e',
-                fontSize: 11, padding: '3px 8px', cursor: 'pointer', whiteSpace: 'nowrap',
+                fontSize: 11, padding: '3px 8px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
               }}
             >
               Gaia GPS
@@ -356,11 +300,11 @@ export default function MapPin({ coordinates, destination, campsiteName }) {
             <button onClick={() => { setShowSearch(v => !v); setSearchError(null); }} style={{
               background: 'none', border: '1px solid #c8bc96',
               borderRadius: 5, color: '#9c8b6e',
-              fontSize: 11, padding: '3px 8px', cursor: 'pointer',
+              fontSize: 11, padding: '3px 8px', cursor: 'pointer', flexShrink: 0,
             }}>
               {showSearch ? '✕' : '🔍'}
             </button>
-          </div>
+          </>
         )}
       </div>
 
