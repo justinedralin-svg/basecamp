@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { trackEvent } from '../utils/analytics.js';
+import { safeStringify } from '../utils/safeStringify.js';
 import PlanningOverlay from './PlanningOverlay.jsx';
 
 export default function ReplanModal({ entry, onClose, onComplete }) {
@@ -15,7 +16,7 @@ export default function ReplanModal({ entry, onClose, onComplete }) {
       const res = await fetch('/api/plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: safeStringify({
           constraints: entry.constraints,
           changeRequest: changeRequest.trim(),
           originalTrip: entry.trip,

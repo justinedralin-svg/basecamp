@@ -15,6 +15,7 @@ import { getDogName, getDogNames } from './utils/profile.js';
 import { loadProfile } from './components/ProfileForm.jsx';
 import { trackEvent } from './utils/analytics.js';
 import { showToast } from './utils/toast.js';
+import { safeStringify } from './utils/safeStringify.js';
 
 function getSharedTrip() {
   try {
@@ -92,15 +93,9 @@ export default function App() {
       vibe: "Surprise me — pick somewhere great you think we'd love!",
     };
 
-    // Serialize once up front — if this throws we surface the real error immediately
-    let body;
-    try {
-      body = JSON.stringify({ constraints });
-    } catch (err) {
-      showToast(`Couldn't prepare your request: ${err.message}`, 'error');
-      setSurpriseLoading(false);
-      return;
-    }
+    // Serialize with cycle-safe stringify — React internals can leak stale
+    // references into closures on some browsers (Safari especially)
+    const body = safeStringify({ constraints });
 
     async function attempt() {
       const res = await fetch('/api/plan', {

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { loadProfile } from './ProfileForm.jsx';
 import { getDogName } from '../utils/profile.js';
 import { trackEvent } from '../utils/analytics.js';
+import { safeStringify } from '../utils/safeStringify.js';
 import RigSearch from './RigSearch.jsx';
 import PlanningOverlay from './PlanningOverlay.jsx';
 
@@ -206,14 +207,7 @@ export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }
     setLoading(true);
     const constraints = { ...form };
 
-    let body;
-    try {
-      body = JSON.stringify({ constraints });
-    } catch (err) {
-      setError(`Couldn't prepare your request: ${err.message}`);
-      setLoading(false);
-      return;
-    }
+    const body = safeStringify({ constraints });
 
     try {
       let data = await attemptPlan(body);
