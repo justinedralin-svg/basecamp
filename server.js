@@ -262,6 +262,66 @@ app.post('/api/plan', rateLimit, async (req, res) => {
 // Keep-alive health check
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
+// Land ownership check via USGS PAD-US (Protected Areas Database)
+// Returns what land management unit the coordinate falls within
+app.get('/api/land-check', async (req, res) => {
+  const { lat, lon } = req.query;
+  if (!lat || !lon) return res.status(400).json({ error: 'lat and lon required' });
+
+  try {
+    const url = `https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Protected_Areas/FeatureServer/0/query` +
+      `?geometry=${lon},${lat}&geometryType=esriGeometryPoint&inSR=4326` +
+      `&spatialRel=esriSpatialRelIntersects` +
+      `&outFields=Mang_Name,Unit_Nm,d_GAP_Sts,d_Mang_Typ` +
+      `&returnGeometry=false&f=json`;
+
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'CampWithMyDog/1.0' },
+      signal: AbortSignal.timeout(8000),
+    });
+    const data = await response.json();
+    const feature = data?.features?.[0]?.attributes;
+
+    if (!feature) return res.json({ found: false });
+
+    const manager = feature.Mang_Name || '';
+    const unitName = feature.Unit_Nm || '';
+    const gapStatus = parseInt(feature.d_GAP_Sts) || 0;
+    const mangType = feature.d_Mang_Typ || '';
+
+    // Determine dispersed camping viability
+    // GAP 1-2 = strictly protected (NPS, Wilderness) — no dispersed
+    // GAP 3 = multi-use (USFS, BLM) — dispersed usually OK
+    // GAP 4 = no official protection — private/state, unclear
+    const DISPERSED_OK = ['USFS', 'BLM'];
+    const DISPERSED_NO = ['NPS', 'FWS', 'DOD'];
+
+    let dispersed = 'unknown';
+    if (DISPERSED_OK.some(m => manager.toUpperCase().includes(m))) dispersed = 'ok';
+    else if (DISPERSED_NO.some(m => manager.toUpperCase().includes(m))) dispersed = 'no';
+    else if (gapStatus <= 2) dispersed = 'no';
+    else if (gapStatus === 3) dispersed = 'ok';
+
+    // Clean up unit name (remove redundant manager prefix)
+    const cleanUnit = unitName
+      .replace(/national forest/i, 'National Forest')
+      .replace(/national park/i, 'National Park')
+      .replace(/\bNF\b/, 'National Forest')
+      .trim();
+
+    res.json({
+      found: true,
+      manager,
+      unitName: cleanUnit,
+      dispersed, // 'ok' | 'no' | 'unknown'
+      gapStatus,
+    });
+  } catch (err) {
+    // Non-fatal — just return not found
+    res.json({ found: false });
+  }
+});
+
 // Weather endpoint — uses Open-Meteo (free, no API key)
 app.get('/api/weather', async (req, res) => {
   const { lat, lon, dates } = req.query;
