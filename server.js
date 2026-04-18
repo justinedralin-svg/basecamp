@@ -262,6 +262,26 @@ app.post('/api/plan', rateLimit, async (req, res) => {
 // Keep-alive health check
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
+// Serve a GPX waypoint file at a stable URL so Gaia GPS can import it directly
+app.get('/api/gpx', (req, res) => {
+  const { lat, lon, name = 'Camp' } = req.query;
+  if (!lat || !lon) return res.status(400).send('lat and lon required');
+
+  const escape = s => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const gpx = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Camp With My Dog" xmlns="http://www.topografix.com/GPX/1/1">
+  <wpt lat="${parseFloat(lat)}" lon="${parseFloat(lon)}">
+    <name>${escape(name)}</name>
+    <sym>Campground</sym>
+  </wpt>
+</gpx>`;
+
+  const filename = name.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+  res.setHeader('Content-Type', 'application/gpx+xml');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}.gpx"`);
+  res.send(gpx);
+});
+
 // Land ownership check via USGS PAD-US (Protected Areas Database)
 // Returns what land management unit the coordinate falls within
 app.get('/api/land-check', async (req, res) => {

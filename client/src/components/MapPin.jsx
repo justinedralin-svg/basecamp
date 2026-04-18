@@ -375,9 +375,26 @@ export default function MapPin({ coordinates, destination, campsiteName }) {
             </a>
             <button
               onClick={() => {
-                const name = campsiteName || destination || 'Camp';
-                downloadGPX({ lat: resolvedCoords.lat, lon: resolvedCoords.lon, name });
-                window.open(`https://www.gaiagps.com/map/?lat=${resolvedCoords.lat}&lon=${resolvedCoords.lon}&zoom=13`, '_blank');
+                const name = encodeURIComponent(campsiteName || destination || 'Camp');
+                const { lat, lon } = resolvedCoords;
+                const appUrl = window.location.origin;
+                // Hosted GPX URL — Gaia GPS app can import directly from this
+                const gpxUrl = encodeURIComponent(`${appUrl}/api/gpx?lat=${lat}&lon=${lon}&name=${name}`);
+                // Deep link: opens Gaia GPS app and imports the pin. Falls back to web map.
+                const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+                const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+                if (isMobile) {
+                  // Try Gaia GPS app deep link first — imports GPX and shows pin
+                  window.location.href = `gaiagps://open?fileUrl=${gpxUrl}`;
+                  // Fallback to web after short delay if app not installed
+                  setTimeout(() => {
+                    window.open(`https://www.gaiagps.com/map/?lat=${lat}&lon=${lon}&zoom=13`, '_blank');
+                  }, 1500);
+                } else {
+                  // Desktop: open web map + download GPX for manual import
+                  window.open(`https://www.gaiagps.com/map/?lat=${lat}&lon=${lon}&zoom=13`, '_blank');
+                  downloadGPX({ lat, lon, name: decodeURIComponent(name) });
+                }
               }}
               style={{
                 background: 'none', border: '1px solid #c8bc96',
