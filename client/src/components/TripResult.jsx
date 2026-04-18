@@ -363,10 +363,23 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
       {/* Email plan — while they're excited about the dog report */}
       <EmailPlan trip={trip} constraints={entry.constraints} />
 
-      {/* Packing notes */}
-      {trip.packingNotes && (
-        <Section icon="🎒" title="Pack list notes">
-          <p style={{ color: '#3d3020', fontSize: 14, lineHeight: 1.6, margin: 0 }}>{trip.packingNotes}</p>
+      {/* Packing list */}
+      {trip.packingItems?.length > 0 && (
+        <Section icon="🎒" title="Pack list">
+          {trip.packingItems.map((item, i) => (
+            <div key={i} style={{
+              display: 'flex', alignItems: 'flex-start', gap: 10,
+              paddingBottom: 8, marginBottom: 8,
+              borderBottom: i < trip.packingItems.length - 1 ? '1px solid #e8e0ca' : 'none',
+            }}>
+              <span style={{
+                width: 18, height: 18, borderRadius: 4, flexShrink: 0,
+                border: '1.5px solid #c8bc96', marginTop: 1,
+                display: 'inline-block',
+              }} />
+              <span style={{ color: '#3d3020', fontSize: 14, lineHeight: 1.4 }}>{item}</span>
+            </div>
+          ))}
         </Section>
       )}
 
