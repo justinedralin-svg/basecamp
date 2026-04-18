@@ -1,11 +1,41 @@
 export default function TripStats({ trips, onStartPlan }) {
   if (trips.length === 0) {
     return (
-      <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-        <div style={{ fontSize: 40, marginBottom: 16 }}>⛺</div>
-        <div style={{ color: '#6b5c42', fontSize: 16, marginBottom: 8 }}>No trips yet</div>
-        <div style={{ color: '#9c8b6e', fontSize: 13, marginBottom: 24 }}>Plan your first adventure to start building stats.</div>
-        <button className="btn-primary" onClick={onStartPlan}>Plan a trip</button>
+      <div>
+        <div style={{ marginBottom: 20 }}>
+          <h2 style={{ color: '#2c2416', fontSize: 20, fontWeight: 700, margin: 0 }}>Your stats</h2>
+          <p style={{ color: '#9c8b6e', fontSize: 13, margin: '4px 0 0' }}>Builds as you plan and complete trips</p>
+        </div>
+
+        {/* Preview stat grid — grayed out to show what they'll earn */}
+        <div style={{ position: 'relative' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 10, opacity: 0.35, filter: 'grayscale(0.4)', pointerEvents: 'none' }}>
+            <StatCard value="0" label="Trips completed" color="#2d6a2d" />
+            <StatCard value="0" label="Nights camped" color="#5c7a3e" />
+            <StatCard value="0" label="Upcoming" color="#7a6a50" />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 10, opacity: 0.35, filter: 'grayscale(0.4)', pointerEvents: 'none' }}>
+            <StatCard value="—" label="Avg rating" color="#5c7a3e" />
+            <StatCard value="0" label="Photos saved" color="#7a6a50" />
+          </div>
+          {/* Destinations teaser */}
+          <div style={{ opacity: 0.35, filter: 'grayscale(0.4)', marginBottom: 10, pointerEvents: 'none' }}>
+            <div style={{ background: '#faf7f0', border: '1px solid #d8cfa8', borderRadius: 10, padding: '14px 16px' }}>
+              <div style={{ color: '#9c8b6e', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 10 }}>Destinations explored</div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {['Your first spot', 'And the next...'].map(d => (
+                  <span key={d} style={{ background: '#f2ede0', border: '1px solid #cbbf96', borderRadius: 999, color: '#6b5c42', fontSize: 12, padding: '3px 10px' }}>{d}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* CTA */}
+        <div style={{ textAlign: 'center', padding: '8px 0 4px' }}>
+          <p style={{ color: '#6b5c42', fontSize: 14, marginBottom: 16 }}>Plan your first trip to start filling this in.</p>
+          <button className="btn-primary" onClick={onStartPlan} style={{ padding: '12px 32px' }}>Plan a trip</button>
+        </div>
       </div>
     );
   }

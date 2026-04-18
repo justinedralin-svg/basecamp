@@ -357,9 +357,7 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
         </Section>
       )}
 
-      {/* 6. ACTION ZONE — email, packing, alternative, buttons */}
-      <EmailPlan trip={trip} constraints={entry.constraints} />
-
+      {/* 6. ACTION ZONE — packing, email, alternative, buttons */}
       {!readOnly && (
         <PackingChecklist
           trip={trip}
@@ -367,6 +365,8 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
           onCheckedChange={setCheckedItems}
         />
       )}
+
+      <EmailPlan trip={trip} constraints={entry.constraints} />
 
       {trip.alternativeOption?.name && (
         <div className="card" style={{ padding: 16, marginBottom: 12 }}>
