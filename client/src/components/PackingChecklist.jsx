@@ -10,7 +10,7 @@ function parsePackingNotes(notes) {
 }
 
 export default function PackingChecklist({ trip, checked = [], onCheckedChange }) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
 
   // Use structured items if available, fall back to parsing notes
   const items = trip?.packingItems?.length
