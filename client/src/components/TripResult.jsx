@@ -256,7 +256,7 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
         </div>
       </div>
 
-      {/* Camp spot + map together */}
+      {/* 1. THE SPOT — map + campsite basics */}
       <Section icon="🏕️" title="The spot">
         <MapPin
           coordinates={trip.campsite?.coordinates}
@@ -270,22 +270,7 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
         )}
       </Section>
 
-      {/* Weather — below the spot */}
-      <WeatherStrip
-        coordinates={trip.campsite?.coordinates}
-        tripDates={entry.constraints?.tripDates}
-        destination={trip.destination}
-        weatherPrefs={entry.constraints?.weatherPrefs}
-        tripConditions={trip.conditions}
-      />
-
-      {/* Safety briefing — fire alerts + permits */}
-      <SafetySection
-        trip={trip}
-        coordinates={trip.campsite?.coordinates}
-      />
-
-      {/* Dog report — prominent */}
+      {/* 2. DOG REPORT — the whole point, above the fold */}
       {trip.dogReport && (
         <Section icon="🐕" title={`${getDogNames('Dog')}'s report`}>
           <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -304,7 +289,54 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
         </Section>
       )}
 
-      {/* Route / rig */}
+      {/* 3. HIGHLIGHTS + WATCH-OUTS — quick gut check */}
+      {(trip.highlights?.length > 0 || trip.watchOuts?.length > 0) && (
+        <div className="grid-2" style={{ marginBottom: 12 }}>
+          {trip.highlights?.length > 0 && (
+            <div className="card" style={{ padding: 16 }}>
+              <div style={{ color: '#2d6a2d', fontSize: 13, fontWeight: 600, marginBottom: 10 }}>✓ Highlights</div>
+              {trip.highlights.map((h, i) => (
+                <div key={i} style={{ color: '#3d3020', fontSize: 13, lineHeight: 1.5, paddingBottom: 6, marginBottom: 6, borderBottom: i < trip.highlights.length - 1 ? '1px solid #e8e0ca' : 'none' }}>{h}</div>
+              ))}
+            </div>
+          )}
+          {trip.watchOuts?.length > 0 && (
+            <div className="card" style={{ padding: 16 }}>
+              <div style={{ color: '#b91c1c', fontSize: 13, fontWeight: 600, marginBottom: 10 }}>⚠ Watch out</div>
+              {trip.watchOuts.map((w, i) => (
+                <div key={i} style={{ color: '#3d3020', fontSize: 13, lineHeight: 1.5, paddingBottom: 6, marginBottom: 6, borderBottom: i < trip.watchOuts.length - 1 ? '1px solid #e8e0ca' : 'none' }}>{w}</div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 4. BEFORE YOU GO — weather + safety + conditions merged */}
+      <div style={{ marginBottom: 4 }}>
+        <div style={{ color: '#9c8b6e', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8, paddingLeft: 2 }}>
+          Before you go
+        </div>
+        <WeatherStrip
+          coordinates={trip.campsite?.coordinates}
+          tripDates={entry.constraints?.tripDates}
+          destination={trip.destination}
+          weatherPrefs={entry.constraints?.weatherPrefs}
+          tripConditions={trip.conditions}
+        />
+        <SafetySection
+          trip={trip}
+          coordinates={trip.campsite?.coordinates}
+        />
+        {trip.conditions && (
+          <Section icon="🗓️" title="Conditions">
+            <Row label="Best season" value={trip.conditions.bestSeason} />
+            <Row label="Current notes" value={trip.conditions.currentNotes} />
+            <Row label="Water" value={trip.conditions.waterAvailability} />
+          </Section>
+        )}
+      </div>
+
+      {/* 5. RIG REPORT */}
       {trip.route && (
         <Section icon="🚙" title="Rig report">
           <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
@@ -326,46 +358,9 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
         </Section>
       )}
 
-      {/* Conditions */}
-      {trip.conditions && (
-        <Section icon="🌤️" title="Conditions">
-          <Row label="Best season" value={trip.conditions.bestSeason} />
-          <Row label="Current notes" value={trip.conditions.currentNotes} />
-          <Row label="Fire restrictions" value={trip.conditions.fireRestrictions} />
-          <Row label="Water" value={trip.conditions.waterAvailability} />
-        </Section>
-      )}
-
-      {/* Highlights + Watch-outs */}
-      {(trip.highlights?.length > 0 || trip.watchOuts?.length > 0) && (
-        <div className="grid-2" style={{ marginBottom: 12 }}>
-          {trip.highlights?.length > 0 && (
-            <div className="card" style={{ padding: 16 }}>
-              <div style={{ color: '#2d6a2d', fontSize: 13, fontWeight: 600, marginBottom: 10 }}>✓ Highlights</div>
-              {trip.highlights.map((h, i) => (
-                <div key={i} style={{ color: '#3d3020', fontSize: 13, lineHeight: 1.5, paddingBottom: 6, marginBottom: 6, borderBottom: i < trip.highlights.length - 1 ? '1px solid #e8e0ca' : 'none' }}>
-                  {h}
-                </div>
-              ))}
-            </div>
-          )}
-          {trip.watchOuts?.length > 0 && (
-            <div className="card" style={{ padding: 16 }}>
-              <div style={{ color: '#b91c1c', fontSize: 13, fontWeight: 600, marginBottom: 10 }}>⚠ Watch out</div>
-              {trip.watchOuts.map((w, i) => (
-                <div key={i} style={{ color: '#3d3020', fontSize: 13, lineHeight: 1.5, paddingBottom: 6, marginBottom: 6, borderBottom: i < trip.watchOuts.length - 1 ? '1px solid #e8e0ca' : 'none' }}>
-                  {w}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Email plan — while they're excited about the dog report */}
+      {/* 6. ACTION ZONE — email, packing, alternative, buttons */}
       <EmailPlan trip={trip} constraints={entry.constraints} />
 
-      {/* Packing list — interactive when viewing fresh result, TripDetail handles its own */}
       {!readOnly && (
         <PackingChecklist
           trip={trip}
@@ -374,7 +369,6 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
         />
       )}
 
-      {/* Alternative */}
       {trip.alternativeOption?.name && (
         <div className="card" style={{ padding: 16, marginBottom: 12 }}>
           <div style={{ color: '#9c8b6e', fontSize: 12, fontWeight: 600, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -388,7 +382,6 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
         </div>
       )}
 
-      {/* Actions */}
       <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
         <button onClick={onPlanAnother} className="btn-ghost" style={{ flex: 1, padding: '12px' }}>
           Plan another trip
@@ -400,7 +393,6 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
         )}
       </div>
 
-      {/* Post-save viral nudge — appears after saving */}
       {saved && !readOnly && <ShareAppNudge destination={trip.destination} />}
 
     </div>
