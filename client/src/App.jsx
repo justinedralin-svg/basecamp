@@ -66,54 +66,54 @@ export default function App() {
   async function handleSurpriseMe(locationOverride) {
     setSurpriseLoading(true);
 
-    // Build constraints from profile + next-weekend defaults
-    const profile = loadProfile() || {};
-    const today = new Date();
-    const daysToFriday = (5 - today.getDay() + 7) % 7 || 7;
-    const friday = new Date(today); friday.setDate(today.getDate() + daysToFriday);
-    const sunday = new Date(friday); sunday.setDate(friday.getDate() + 2);
-    const fmt = d => d.toISOString().split('T')[0];
-
-    const constraints = {
-      startingLocation: locationOverride || profile.startingLocation || 'California',
-      tripStartDate: fmt(friday),
-      tripEndDate: fmt(sunday),
-      tripDates: `${friday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}–${sunday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
-      tripLength: '2 nights',
-      rigType: profile.rigType || '',
-      campingStyle: profile.campingStyle || '',
-      roadExperience: profile.roadExperience || 'Moderate dirt roads (stock is fine)',
-      driveDistance: profile.driveDistance || '2–3 hours',
-      hasDogs: true,
-      dogs: profile.dogs?.length ? profile.dogs : [{ name: '', breed: '', size: 'Large (60–100 lbs)' }],
-      activities: ['🥾 Hiking', '🏊 Swimming'],
-      energyLevel: 'adventurous',
-      campsiteType: 'any',
-      weatherPrefs: { maxRainChance: null, minTempF: '', maxTempF: '', avoidWind: false },
-      vibe: "Surprise me — pick somewhere great you think we'd love!",
-    };
-
-    // Serialize with cycle-safe stringify — React internals can leak stale
-    // references into closures on some browsers (Safari especially)
-    const body = safeStringify({ constraints });
-
-    async function attempt() {
-      const res = await fetch('/api/plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body,
-      });
-      const text = await res.text();
-      let data;
-      try { data = JSON.parse(text); } catch { return null; }
-      if (!res.ok) throw new Error(data?.error || `Server error ${res.status}`);
-      if (!data?.trip) return null; // empty response — retry
-      return data;
-    }
-
-    const sleep = ms => new Promise(r => setTimeout(r, ms));
-
     try {
+      // Build constraints from profile + next-weekend defaults
+      const profile = loadProfile() || {};
+      const today = new Date();
+      const daysToFriday = (5 - today.getDay() + 7) % 7 || 7;
+      const friday = new Date(today); friday.setDate(today.getDate() + daysToFriday);
+      const sunday = new Date(friday); sunday.setDate(friday.getDate() + 2);
+      const fmt = d => d.toISOString().split('T')[0];
+
+      const constraints = {
+        startingLocation: locationOverride || profile.startingLocation || 'California',
+        tripStartDate: fmt(friday),
+        tripEndDate: fmt(sunday),
+        tripDates: `${friday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}–${sunday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
+        tripLength: '2 nights',
+        rigType: profile.rigType || '',
+        campingStyle: profile.campingStyle || '',
+        roadExperience: profile.roadExperience || 'Moderate dirt roads (stock is fine)',
+        driveDistance: profile.driveDistance || '2–3 hours',
+        hasDogs: true,
+        dogs: profile.dogs?.length ? profile.dogs : [{ name: '', breed: '', size: 'Large (60–100 lbs)' }],
+        activities: ['🥾 Hiking', '🏊 Swimming'],
+        energyLevel: 'adventurous',
+        campsiteType: 'any',
+        weatherPrefs: { maxRainChance: null, minTempF: '', maxTempF: '', avoidWind: false },
+        vibe: "Surprise me — pick somewhere great you think we'd love!",
+      };
+
+      // Serialize with cycle-safe stringify — React internals can leak stale
+      // references into closures on some browsers (Safari especially)
+      const body = safeStringify({ constraints });
+
+      const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+      async function attempt() {
+        const res = await fetch('/api/plan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body,
+        });
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch { return null; }
+        if (!res.ok) throw new Error(data?.error || `Server error ${res.status}`);
+        if (!data?.trip) return null; // empty response — retry
+        return data;
+      }
+
       // Up to 3 attempts with increasing delays — gives Render time to cold-start
       let data = await attempt();
       if (!data) { await sleep(4000); data = await attempt(); }

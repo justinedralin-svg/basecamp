@@ -296,39 +296,50 @@ app.get('/api/land-check', async (req, res) => {
   if (!lat || !lon) return res.status(400).json({ error: 'lat and lon required' });
 
   // ── 1. Nominatim reverse geocode ───────────────────────────────────────────
+  // Try decreasing zoom levels so we get the broadest administrative boundary
+  // (national forest / BLM unit) even when a specific road is the closest feature.
   async function checkViaNominatim() {
-    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1&zoom=10`;
-    const r = await fetch(url, {
-      headers: { 'User-Agent': 'CampWithMyDog/1.0 (campwithmydog.com)', Accept: 'application/json' },
-      signal: AbortSignal.timeout(8000),
-    });
-    const data = await r.json();
+    function classify(data) {
+      const parts = (data.display_name || '').split(',').map(p => p.trim());
+      const address = data.address || {};
+      const findPart = (kw) => parts.find(p => p.toLowerCase().includes(kw.toLowerCase())) || null;
+      const findAddr = (kw) => Object.values(address).find(v => typeof v === 'string' && v.toLowerCase().includes(kw.toLowerCase())) || null;
 
-    // display_name is comma-separated — each segment is a geographic component
-    // e.g. "FR 9N18, Angeles National Forest, Los Angeles County, California, US"
-    const parts = (data.display_name || '').split(',').map(p => p.trim());
-    const address = data.address || {};
+      const nf = findAddr('national forest') || findPart('national forest');
+      if (nf) return { found: true, manager: 'USFS', unitName: nf.replace(/,.*/, '').trim(), dispersed: 'ok' };
 
-    // Helper: find a part containing a keyword, return it cleaned up
-    const findPart = (kw) => parts.find(p => p.toLowerCase().includes(kw.toLowerCase())) || null;
-    // Also check all address values (Nominatim sometimes puts it in a named key)
-    const findAddr = (kw) => Object.values(address).find(v => typeof v === 'string' && v.toLowerCase().includes(kw.toLowerCase())) || null;
+      const blm = findAddr('bureau of land management') || findPart('bureau of land management')
+               || findAddr(' blm ') || findPart('blm field') || findPart('blm ');
+      if (blm) return { found: true, manager: 'BLM', unitName: blm.replace(/,.*/, '').trim() || 'BLM Land', dispersed: 'ok' };
 
-    const nf = findAddr('national forest') || findPart('national forest');
-    if (nf) return { found: true, manager: 'USFS', unitName: nf.replace(/,.*/, '').trim(), dispersed: 'ok' };
+      const np = findAddr('national park') || findPart('national park');
+      if (np) return { found: true, manager: 'NPS', unitName: np.replace(/,.*/, '').trim(), dispersed: 'no' };
 
-    const blm = findAddr('bureau of land management') || findPart('bureau of land management') || findAddr(' blm ') || findPart('blm field');
-    if (blm) return { found: true, manager: 'BLM', unitName: blm.replace(/,.*/, '').trim() || 'BLM Land', dispersed: 'ok' };
+      const nr = findAddr('national recreation area') || findPart('national recreation area');
+      if (nr) return { found: true, manager: 'NPS', unitName: nr.replace(/,.*/, '').trim(), dispersed: 'no' };
 
-    const np = findAddr('national park') || findPart('national park');
-    if (np) return { found: true, manager: 'NPS', unitName: np.replace(/,.*/, '').trim(), dispersed: 'no' };
+      const ws = findAddr('wilderness') || findPart('wilderness');
+      if (ws) return { found: true, manager: 'Wilderness', unitName: ws.replace(/,.*/, '').trim(), dispersed: 'unknown' };
 
-    const nr = findAddr('national recreation area') || findPart('national recreation area');
-    if (nr) return { found: true, manager: 'NPS', unitName: nr.replace(/,.*/, '').trim(), dispersed: 'no' };
+      return null;
+    }
 
-    const ws = findAddr('wilderness') || findPart('wilderness');
-    if (ws) return { found: true, manager: 'Wilderness', unitName: ws.replace(/,.*/, '').trim(), dispersed: 'unknown' };
-
+    // Zoom 10 → specific road/feature, 8 → municipal/forest level, 6 → broader region
+    // Higher zoom = more specific; lower zoom = broader boundary returned
+    for (const zoom of [10, 8, 6]) {
+      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1&zoom=${zoom}`;
+      try {
+        const r = await fetch(url, {
+          headers: { 'User-Agent': 'CampWithMyDog/1.0 (campwithmydog.com)', Accept: 'application/json' },
+          signal: AbortSignal.timeout(8000),
+        });
+        const data = await r.json();
+        const result = classify(data);
+        if (result) return result;
+      } catch (err) {
+        console.log(`[land-check] Nominatim zoom=${zoom} failed: ${err.message}`);
+      }
+    }
     return null;
   }
 
