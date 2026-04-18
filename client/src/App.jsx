@@ -14,6 +14,7 @@ import PlanningOverlay from './components/PlanningOverlay.jsx';
 import { getDogName, getDogNames } from './utils/profile.js';
 import { loadProfile } from './components/ProfileForm.jsx';
 import { trackEvent } from './utils/analytics.js';
+import { showToast } from './utils/toast.js';
 
 function getSharedTrip() {
   try {
@@ -105,7 +106,7 @@ export default function App() {
       trackEvent('trip_planned');
       handlePlanComplete(data.trip, constraints);
     } catch (err) {
-      alert(err.message);
+      showToast(err.message, 'error');
     } finally {
       setSurpriseLoading(false);
     }

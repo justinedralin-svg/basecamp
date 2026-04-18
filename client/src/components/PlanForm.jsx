@@ -233,6 +233,8 @@ export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }
   }
 
   const isLastStep = step === STEPS.length - 1;
+  // Allow submitting from step 0 onward — more steps = better results, but not required
+  const canSubmitNow = step >= 0 && form.startingLocation.trim().length > 0;
 
   // ── Step content ─────────────────────────────────────────────────────────
   function renderStep() {
@@ -251,7 +253,14 @@ export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }
         </div>
 
         <div style={sectionStyle}>
-          <label style={labelStyle}>When are you going?</label>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <label style={{ ...labelStyle, margin: 0 }}>When are you going? <span style={{ color: '#b8aa88', fontWeight: 400 }}>(optional)</span></label>
+            {(form.tripStartDate) && (
+              <button type="button" onClick={() => setDates('', '')} style={{ background: 'none', border: 'none', color: '#b8aa88', fontSize: 12, cursor: 'pointer', padding: 0 }}>
+                Clear
+              </button>
+            )}
+          </div>
           <div className="grid-2" style={{ gap: 10 }}>
             <div>
               <div style={{ color: '#9c8b6e', fontSize: 12, fontWeight: 500, marginBottom: 6 }}>Start date</div>
@@ -274,11 +283,10 @@ export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }
               />
             </div>
           </div>
-          {form.tripDates && (
-            <div style={{ marginTop: 8, color: '#5c7a3e', fontSize: 13, fontWeight: 500 }}>
-              📅 {form.tripDates} · {form.tripLength}
-            </div>
-          )}
+          {form.tripDates
+            ? <div style={{ marginTop: 8, color: '#5c7a3e', fontSize: 13, fontWeight: 500 }}>📅 {form.tripDates} · {form.tripLength}</div>
+            : <div style={{ marginTop: 8, color: '#b8aa88', fontSize: 12 }}>No dates? We'll plan for next weekend.</div>
+          }
         </div>
 
         <div style={sectionStyle}>
@@ -289,6 +297,23 @@ export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }
             ))}
           </div>
         </div>
+
+        {/* Quick-submit shortcut — visible once location is filled */}
+        {form.startingLocation.trim().length > 2 && (
+          <div className="fade-in" style={{ background: 'rgba(92,122,62,0.06)', border: '1px solid rgba(92,122,62,0.2)', borderRadius: 10, padding: '14px 16px', marginBottom: 4 }}>
+            <div style={{ color: '#5c7a3e', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>That's all we need 🐾</div>
+            <div style={{ color: '#9c8b6e', fontSize: 12, marginBottom: 12 }}>We'll fill in smart defaults for your rig and preferences — or keep going to customise.</div>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={loading}
+              className="btn-primary"
+              style={{ width: '100%', padding: '13px', fontSize: 15 }}
+            >
+              🐾 Find my trip now →
+            </button>
+          </div>
+        )}
       </div>
     );
 
@@ -520,6 +545,29 @@ export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }
       >
         {isLastStep ? '🐾 Find our next adventure →' : `Next: ${STEPS[step + 1]?.label} →`}
       </button>
+
+      {/* Skip to results — available on steps 1–3 */}
+      {!isLastStep && step > 0 && (
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={loading}
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            fontSize: 14,
+            marginTop: 8,
+            background: 'transparent',
+            border: '1px solid rgba(92,122,62,0.3)',
+            borderRadius: 10,
+            color: '#5c7a3e',
+            cursor: 'pointer',
+            fontWeight: 500,
+          }}
+        >
+          Skip to results →
+        </button>
+      )}
     </div>
   );
 }

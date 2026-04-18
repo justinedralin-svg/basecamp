@@ -62,21 +62,36 @@ export default function Home({ trips, onStartPlan, onSurpriseMe, onViewLog, onVi
             >
               🗺️ Plan my first trip →
             </button>
-            <button
-              onClick={onSurpriseMe}
-              style={{
-                width: '100%', padding: '12px', fontSize: 14,
-                background: '#faf7f0',
-                border: '1.5px solid #d8cfa8',
-                borderRadius: 10, cursor: 'pointer',
-                color: '#5c7a3e', fontWeight: 600,
-                transition: 'border-color 0.15s',
-              }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = '#5c7a3e'}
-              onMouseLeave={e => e.currentTarget.style.borderColor = '#d8cfa8'}
-            >
-              🎲 Surprise me — just pick something great
-            </button>
+
+            {/* Surprise Me — zero-friction path */}
+            <div style={{
+              background: 'rgba(92,122,62,0.06)',
+              border: '1.5px solid rgba(92,122,62,0.25)',
+              borderRadius: 12,
+              padding: '14px 16px',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                <div style={{ fontSize: 12, color: '#5c7a3e', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                  Zero forms. Instant trip.
+                </div>
+              </div>
+              <div style={{ fontSize: 13, color: '#9c8b6e', marginBottom: 10, lineHeight: 1.5 }}>
+                No setup needed — we pick a great dog-friendly spot for next weekend.
+              </div>
+              <button
+                onClick={onSurpriseMe}
+                style={{
+                  width: '100%', padding: '11px', fontSize: 14,
+                  background: '#5c7a3e',
+                  border: 'none',
+                  borderRadius: 8, cursor: 'pointer',
+                  color: '#fff', fontWeight: 600,
+                }}
+              >
+                🎲 Surprise me
+              </button>
+            </div>
+
             <button
               onClick={onNavProfile}
               style={{ background: 'none', border: 'none', color: '#9c8b6e', fontSize: 13, cursor: 'pointer', padding: '6px', textDecoration: 'underline' }}
