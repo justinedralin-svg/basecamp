@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import TripCard from './TripCard.jsx';
 import SampleTrip from './SampleTrip.jsx';
 
@@ -10,6 +11,7 @@ const STEPS = [
 export default function Home({ trips, onStartPlan, onSurpriseMe, onViewLog, onViewTrip, onNavProfile, dogName, dogNames }) {
   const recent = trips.slice(0, 3);
   const isFirstTime = !dogName && trips.length === 0;
+  const [surpriseLocation, setSurpriseLocation] = useState('');
 
   return (
     <div className="fade-in">
@@ -63,38 +65,9 @@ export default function Home({ trips, onStartPlan, onSurpriseMe, onViewLog, onVi
               🗺️ Plan my first trip →
             </button>
 
-            {/* Surprise Me — zero-friction path */}
-            <div style={{
-              background: 'rgba(92,122,62,0.06)',
-              border: '1.5px solid rgba(92,122,62,0.25)',
-              borderRadius: 12,
-              padding: '14px 16px',
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                <div style={{ fontSize: 12, color: '#5c7a3e', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                  Zero forms. Instant trip.
-                </div>
-              </div>
-              <div style={{ fontSize: 13, color: '#9c8b6e', marginBottom: 10, lineHeight: 1.5 }}>
-                No setup needed — we pick a great dog-friendly spot for next weekend.
-              </div>
-              <button
-                onClick={onSurpriseMe}
-                style={{
-                  width: '100%', padding: '11px', fontSize: 14,
-                  background: '#5c7a3e',
-                  border: 'none',
-                  borderRadius: 8, cursor: 'pointer',
-                  color: '#fff', fontWeight: 600,
-                }}
-              >
-                🎲 Surprise me
-              </button>
-            </div>
-
             <button
               onClick={onNavProfile}
-              style={{ background: 'none', border: 'none', color: '#9c8b6e', fontSize: 13, cursor: 'pointer', padding: '6px', textDecoration: 'underline' }}
+              style={{ background: 'none', border: 'none', color: '#9c8b6e', fontSize: 13, cursor: 'pointer', padding: '4px', textDecoration: 'underline' }}
             >
               Add your dog first for better results
             </button>
@@ -102,6 +75,46 @@ export default function Home({ trips, onStartPlan, onSurpriseMe, onViewLog, onVi
 
           {/* Sample trip — the money shot */}
           <SampleTrip onPlan={onStartPlan} dogName={dogName} />
+
+          {/* Surprise Me — requires location, shown lower so new users see the main CTA first */}
+          <div style={{
+            background: 'rgba(92,122,62,0.05)',
+            border: '1px solid rgba(92,122,62,0.2)',
+            borderRadius: 12,
+            padding: '16px',
+            marginBottom: 20,
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#5c7a3e', marginBottom: 4 }}>🎲 Just surprise me</div>
+            <div style={{ fontSize: 12, color: '#9c8b6e', marginBottom: 12, lineHeight: 1.5 }}>
+              Tell us where you're coming from and we'll pick a great dog-friendly spot for next weekend.
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                value={surpriseLocation}
+                onChange={e => setSurpriseLocation(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && surpriseLocation.trim() && onSurpriseMe(surpriseLocation.trim())}
+                placeholder="Your city or zip code"
+                style={{
+                  flex: 1, padding: '9px 12px', fontSize: 14,
+                  borderRadius: 8, border: '1px solid #c8bc96',
+                  background: '#faf7f0', color: '#2c2416', outline: 'none',
+                }}
+              />
+              <button
+                onClick={() => surpriseLocation.trim() && onSurpriseMe(surpriseLocation.trim())}
+                disabled={!surpriseLocation.trim()}
+                style={{
+                  padding: '9px 16px', fontSize: 14, fontWeight: 600,
+                  background: surpriseLocation.trim() ? '#5c7a3e' : '#c8bc96',
+                  border: 'none', borderRadius: 8, cursor: surpriseLocation.trim() ? 'pointer' : 'default',
+                  color: '#fff', whiteSpace: 'nowrap',
+                  transition: 'background 0.15s',
+                }}
+              >
+                Go →
+              </button>
+            </div>
+          </div>
 
           {/* Steps — below the example, as secondary info */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>

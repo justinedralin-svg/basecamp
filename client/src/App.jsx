@@ -62,7 +62,7 @@ export default function App() {
     setDogNames(getDogNames(null));
   }
 
-  async function handleSurpriseMe() {
+  async function handleSurpriseMe(locationOverride) {
     setSurpriseLoading(true);
 
     // Build constraints from profile + next-weekend defaults
@@ -74,7 +74,7 @@ export default function App() {
     const fmt = d => d.toISOString().split('T')[0];
 
     const constraints = {
-      startingLocation: profile.startingLocation || 'California',
+      startingLocation: locationOverride || profile.startingLocation || 'California',
       tripStartDate: fmt(friday),
       tripEndDate: fmt(sunday),
       tripDates: `${friday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}–${sunday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
@@ -254,7 +254,7 @@ export default function App() {
           <Home
             trips={trips}
             onStartPlan={() => { trackEvent('form_started'); nav('plan'); }}
-            onSurpriseMe={() => { trackEvent('surprise_me_clicked'); handleSurpriseMe(); }}
+            onSurpriseMe={(loc) => { trackEvent('surprise_me_clicked'); handleSurpriseMe(loc); }}
             onViewLog={() => nav('log')}
             onViewTrip={handleViewTrip}
             onNavProfile={() => nav('profile')}
