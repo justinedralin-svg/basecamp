@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { jsonrepair } = require('jsonrepair');
+const { registerLandingPages, STATE_PAGES, ACTIVITY_PAGES } = require('./landingPages');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -896,6 +897,56 @@ function buildTripEmail({ trip, constraints, appUrl }) {
 </body>
 </html>`;
 }
+
+// ── SEO Landing Pages ─────────────────────────────────────────────────────────
+registerLandingPages(app);
+
+// ── Sitemap ───────────────────────────────────────────────────────────────────
+app.get('/sitemap.xml', (req, res) => {
+  const base = process.env.APP_URL || 'https://campwithmydog.com';
+  const today = new Date().toISOString().split('T')[0];
+
+  const staticUrls = ['', '/dog-friendly-camping'].map(p => `
+  <url>
+    <loc>${base}${p}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>${p === '' ? '1.0' : '0.9'}</priority>
+  </url>`).join('');
+
+  const stateUrls = Object.keys(STATE_PAGES).map(slug => `
+  <url>
+    <loc>${base}/dog-friendly-camping/${slug}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>`).join('');
+
+  const activityUrls = Object.keys(ACTIVITY_PAGES).map(slug => `
+  <url>
+    <loc>${base}/dog-friendly-camping/${slug}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>`).join('');
+
+  res.set('Content-Type', 'application/xml');
+  res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${staticUrls}${stateUrls}${activityUrls}
+</urlset>`);
+});
+
+// ── Robots.txt ────────────────────────────────────────────────────────────────
+app.get('/robots.txt', (req, res) => {
+  const base = process.env.APP_URL || 'https://campwithmydog.com';
+  res.set('Content-Type', 'text/plain');
+  res.send(`User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: ${base}/sitemap.xml`);
+});
 
 // Serve built client in production
 app.use(express.static(path.join(__dirname, 'client/dist')));
