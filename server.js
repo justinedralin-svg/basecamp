@@ -282,62 +282,71 @@ app.get('/api/gpx', (req, res) => {
   res.send(gpx);
 });
 
-// Land ownership check via USGS PAD-US (Protected Areas Database)
-// Returns what land management unit the coordinate falls within
+// Land ownership check — multi-source parallel lookup for best accuracy
+// Source priority: USFS boundaries → BLM admin units → PAD-US fallback
 app.get('/api/land-check', async (req, res) => {
   const { lat, lon } = req.query;
   if (!lat || !lon) return res.status(400).json({ error: 'lat and lon required' });
 
+  const geom = `geometry=${lon},${lat}&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects&returnGeometry=false&f=json`;
+  const opts = { headers: { 'User-Agent': 'CampWithMyDog/1.0' }, signal: AbortSignal.timeout(9000) };
+
+  async function queryArcGIS(url) {
+    try {
+      const r = await fetch(url, opts);
+      const d = await r.json();
+      return d?.features?.[0]?.attributes || null;
+    } catch { return null; }
+  }
+
   try {
-    const url = `https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Protected_Areas/FeatureServer/0/query` +
-      `?geometry=${lon},${lat}&geometryType=esriGeometryPoint&inSR=4326` +
-      `&spatialRel=esriSpatialRelIntersects` +
-      `&outFields=Mang_Name,Unit_Nm,d_GAP_Sts,d_Mang_Typ` +
-      `&returnGeometry=false&f=json`;
+    // Query all three sources in parallel
+    const [usfs, blm, pad] = await Promise.all([
+      // 1. USFS Forest System Boundaries — authoritative for National Forests
+      queryArcGIS(
+        `https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_ForestSystemBoundaries_01/FeatureServer/0/query?${geom}&outFields=FORESTNAME,REGION`
+      ),
+      // 2. BLM National Surface Management Agency Areas
+      queryArcGIS(
+        `https://gis.blm.gov/arcgis/rest/services/lands/BLM_Natl_SMA_LimitedAccess/MapServer/1/query?${geom}&outFields=ADMIN_UNIT_NAME,MGMT_AGENCY`
+      ),
+      // 3. PAD-US combined (NPS, FWS, state, etc.) — use GAP_Sts (numeric field)
+      queryArcGIS(
+        `https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Protected_Areas/FeatureServer/0/query?${geom}&outFields=Mang_Name,Unit_Nm,GAP_Sts`
+      ),
+    ]);
 
-    const response = await fetch(url, {
-      headers: { 'User-Agent': 'CampWithMyDog/1.0' },
-      signal: AbortSignal.timeout(8000),
-    });
-    const data = await response.json();
-    const feature = data?.features?.[0]?.attributes;
+    // USFS hit — definitely a National Forest
+    if (usfs?.FORESTNAME) {
+      return res.json({ found: true, manager: 'USFS', unitName: usfs.FORESTNAME, dispersed: 'ok' });
+    }
 
-    if (!feature) return res.json({ found: false });
+    // BLM hit — definitely BLM land
+    if (blm?.ADMIN_UNIT_NAME || blm?.MGMT_AGENCY) {
+      return res.json({ found: true, manager: 'BLM', unitName: blm.ADMIN_UNIT_NAME || 'BLM Land', dispersed: 'ok' });
+    }
 
-    const manager = feature.Mang_Name || '';
-    const unitName = feature.Unit_Nm || '';
-    const gapStatus = parseInt(feature.d_GAP_Sts) || 0;
-    const mangType = feature.d_Mang_Typ || '';
+    // PAD-US fallback — covers NPS, FWS, state parks, etc.
+    if (pad?.Mang_Name) {
+      const manager = pad.Mang_Name || '';
+      const unitName = (pad.Unit_Nm || '').trim();
+      const gapStatus = parseInt(pad.GAP_Sts) || 0; // GAP_Sts is numeric
 
-    // Determine dispersed camping viability
-    // GAP 1-2 = strictly protected (NPS, Wilderness) — no dispersed
-    // GAP 3 = multi-use (USFS, BLM) — dispersed usually OK
-    // GAP 4 = no official protection — private/state, unclear
-    const DISPERSED_OK = ['USFS', 'BLM'];
-    const DISPERSED_NO = ['NPS', 'FWS', 'DOD'];
+      const DISPERSED_OK = ['USFS', 'BLM', 'USFS-R', 'TRIB'];
+      const DISPERSED_NO = ['NPS', 'FWS', 'DOD', 'STAT'];
 
-    let dispersed = 'unknown';
-    if (DISPERSED_OK.some(m => manager.toUpperCase().includes(m))) dispersed = 'ok';
-    else if (DISPERSED_NO.some(m => manager.toUpperCase().includes(m))) dispersed = 'no';
-    else if (gapStatus <= 2) dispersed = 'no';
-    else if (gapStatus === 3) dispersed = 'ok';
+      let dispersed = 'unknown';
+      if (DISPERSED_OK.some(m => manager.toUpperCase().includes(m))) dispersed = 'ok';
+      else if (DISPERSED_NO.some(m => manager.toUpperCase().includes(m))) dispersed = 'no';
+      else if (gapStatus >= 1 && gapStatus <= 2) dispersed = 'no';
+      else if (gapStatus === 3) dispersed = 'ok';
 
-    // Clean up unit name (remove redundant manager prefix)
-    const cleanUnit = unitName
-      .replace(/national forest/i, 'National Forest')
-      .replace(/national park/i, 'National Park')
-      .replace(/\bNF\b/, 'National Forest')
-      .trim();
+      return res.json({ found: true, manager, unitName, dispersed, gapStatus });
+    }
 
-    res.json({
-      found: true,
-      manager,
-      unitName: cleanUnit,
-      dispersed, // 'ok' | 'no' | 'unknown'
-      gapStatus,
-    });
+    // Nothing found — private or unclassified land
+    res.json({ found: false });
   } catch (err) {
-    // Non-fatal — just return not found
     res.json({ found: false });
   }
 });

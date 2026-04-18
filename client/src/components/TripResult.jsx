@@ -264,7 +264,6 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
           campsiteName={trip.campsite?.name}
         />
         <Row label="Name" value={trip.campsite?.name} />
-        <Row label="Type" value={trip.campsite?.type} />
         {trip.campsite?.description && (
           <p style={{ color: '#3d3020', fontSize: 14, lineHeight: 1.6, margin: 0 }}>{trip.campsite.description}</p>
         )}
