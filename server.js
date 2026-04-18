@@ -295,20 +295,21 @@ app.get('/api/land-check', async (req, res) => {
   if (!lat || !lon) return res.status(400).json({ error: 'lat and lon required' });
 
   try {
-    // Combined query: land ownership (is_in) + nearby fee campgrounds (node around 500m)
-    const query = `[out:json][timeout:12];(is_in(${lat},${lon});node[tourism=camp_site](around:500,${lat},${lon});node[amenity=camping](around:500,${lat},${lon}););out tags;`;
-    const r = await fetch('https://overpass-api.de/api/interpreter', {
+    const overpassPost = (q, timeout = 12000) => fetch('https://overpass-api.de/api/interpreter', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'CampWithMyDog/1.0' },
-      body: `data=${encodeURIComponent(query)}`,
-      signal: AbortSignal.timeout(14000),
-    });
-    const data = await r.json();
-    const elements = data?.elements || [];
+      body: `data=${encodeURIComponent(q)}`,
+      signal: AbortSignal.timeout(timeout),
+    }).then(r => r.json()).catch(() => ({ elements: [] }));
 
-    // Separate: areas/relations (from is_in) vs nodes (campsite proximity)
-    const areas = elements.filter(e => e.type === 'area' || e.type === 'relation');
-    const nearbyNodes = elements.filter(e => e.type === 'node');
+    // Run both queries in parallel — keep is_in standalone so it stays reliable
+    const [landData, campData] = await Promise.all([
+      overpassPost(`[out:json][timeout:10];is_in(${lat},${lon});out tags;`),
+      overpassPost(`[out:json][timeout:8];node[tourism=camp_site](around:500,${lat},${lon});out tags;`, 10000),
+    ]);
+
+    const areas = landData?.elements || [];
+    const nearbyNodes = campData?.elements || [];
 
     // Score each area — pick the most specific public land match
     function classifyArea(tags) {
