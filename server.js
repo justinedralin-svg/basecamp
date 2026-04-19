@@ -946,6 +946,15 @@ app.post('/api/send-plan', async (req, res) => {
       html,
     });
 
+    // Add to Resend audience (non-fatal — don't block the send if this fails)
+    if (process.env.RESEND_AUDIENCE_ID) {
+      resend.contacts.create({
+        email,
+        audienceId: process.env.RESEND_AUDIENCE_ID,
+        unsubscribed: false,
+      }).catch(err => console.error('Resend contacts failed (non-fatal):', err.message));
+    }
+
     // Notify owner of new signup (non-fatal)
     resend.emails.send({
       from: 'Camp With My Dog <hello@campwithmydog.com>',
