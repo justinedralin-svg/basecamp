@@ -56,6 +56,11 @@ export default function App() {
     saveTrips(trips);
   }, [trips]);
 
+  // Pre-warm the Render server on page load so Surprise Me doesn't cold-start
+  useEffect(() => {
+    fetch('/api/health').catch(() => {});
+  }, []);
+
   const [surpriseLoading, setSurpriseLoading] = useState(false);
 
   function handleProfileSaved() {
@@ -114,11 +119,12 @@ export default function App() {
         return data;
       }
 
-      // Up to 3 attempts with increasing delays — gives Render time to cold-start
+      // Up to 4 attempts with increasing delays — Render free tier can take 15-30s to cold-start
       let data = await attempt();
-      if (!data) { await sleep(4000); data = await attempt(); }
+      if (!data) { await sleep(5000); data = await attempt(); }
       if (!data) { await sleep(8000); data = await attempt(); }
-      if (!data) throw new Error('The server is warming up — please try again in a few seconds.');
+      if (!data) { await sleep(12000); data = await attempt(); }
+      if (!data) throw new Error('The server took too long to respond — please try again.');
       trackEvent('trip_planned');
       handlePlanComplete(data.trip, constraints);
     } catch (err) {
