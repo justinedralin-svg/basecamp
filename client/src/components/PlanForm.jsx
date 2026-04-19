@@ -25,12 +25,6 @@ const ENERGY_LEVELS = [
   { val: 'epic',        emoji: '⚡', label: 'Epic',        desc: 'Push it — technical terrain, big miles' },
 ];
 
-const CAMPSITE_TYPES = [
-  { val: 'dispersed', label: '🌲 Dispersed / free' },
-  { val: 'established', label: '🏕️ Established / reserved' },
-  { val: 'any', label: '🤷 No preference' },
-];
-
 // Step definitions
 const STEPS = [
   { id: 'when',  label: 'When',   emoji: '📅' },
@@ -54,7 +48,7 @@ const DEFAULT_FORM = {
   activities: [],
   driveDistance: '2–3 hours',
   energyLevel: 'adventurous',
-  campsiteType: 'any',
+  campsiteType: 'dispersed',
   weatherPrefs: { maxRainChance: null, minTempF: '', maxTempF: '', avoidWind: false },
   vibe: '',
 };
@@ -455,19 +449,6 @@ export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }
           </div>
         </div>
 
-        <div style={sectionStyle}>
-          <label style={labelStyle}>Campsite type</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {CAMPSITE_TYPES.map(c => (
-              <button
-                type="button"
-                key={c.val}
-                className={`tag-btn${form.campsiteType === c.val ? ' selected' : ''}`}
-                onClick={() => set('campsiteType', c.val)}
-              >{c.label}</button>
-            ))}
-          </div>
-        </div>
       </div>
     );
 
@@ -622,7 +603,6 @@ function TripSummary({ form }) {
     form.campingStyle && { icon: '🏕️', label: 'Setup', value: form.campingStyle },
     form.hasDogs && form.dogs?.length && { icon: '🐾', label: 'Dogs', value: form.dogs.map(d => d.name || d.breed || 'Dog').join(', ') },
     { icon: '🏔️', label: 'Vibe', value: ENERGY_LEVELS.find(e => e.val === form.energyLevel)?.label || form.energyLevel },
-    form.campsiteType !== 'any' && { icon: '🌲', label: 'Camp type', value: CAMPSITE_TYPES.find(c => c.val === form.campsiteType)?.label || form.campsiteType },
     form.activities?.length && { icon: '🎯', label: 'Activities', value: form.activities.map(a => a.split(' ').slice(1).join(' ')).join(', ') },
   ].filter(Boolean);
 
