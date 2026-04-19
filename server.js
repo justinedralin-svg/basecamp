@@ -98,15 +98,16 @@ You MUST respond with ONLY a valid JSON object — no markdown, no explanation b
     "fireRestrictions": "Typical fire restriction status and Stage levels",
     "waterAvailability": "Water sources nearby — creek, spring, lake, none"
   },
-  "highlights": ["3-5 specific trip highlights"],
-  "watchOuts": ["2-3 honest things to watch out for"],
-  "packingNotes": "Specific gear or prep notes for this exact trip (kept for context)",
-  "packingItems": [
-    "Each item as a short actionable string, e.g. 'Air down tires to 20psi for last 4 miles'",
-    "Group naturally: start with rig/road items, then camp setup, then dog gear, then personal",
-    "10-18 items total — specific to this trip, not generic camping boilerplate",
-    "For dogs: water bowl + extra water, cooling mat if hot, booties if rocky/hot terrain",
-    "Include any permit/pass the user needs to bring"
+  "highlights": [
+    "3-4 highlights ONLY — each must be specific to THIS spot, not generic",
+    "At least one must reference the dog by breed or size (e.g. 'The creek at mile 2 is knee-deep and slow — perfect for a Lab to wade without getting swept')",
+    "At least one must be something you'd only know from research or experience (a specific swimming hole, a meadow that opens up past a gate, a view from a named ridge)",
+    "NEVER write: 'beautiful scenery', 'great stargazing', 'peaceful and remote', or anything that could apply to 50 other trips"
+  ],
+  "watchOuts": [
+    "2-3 watch outs — must be specific, actionable, and things most people wouldn't think to check",
+    "Good examples: 'The creek crossing at the trailhead runs fast through June — fine for large dogs, risky for small ones', 'FR 7N09 has a locked gate past the first pullout after Labor Day', 'No shade at camp until late afternoon — bring a tarp or plan to be on trail midday'",
+    "NEVER write: 'bring extra water', 'cell service may be limited', 'check fire restrictions', 'let someone know your plans' — those are boilerplate, not useful"
   ],
   "alternativeOption": {
     "name": "Backup destination name",

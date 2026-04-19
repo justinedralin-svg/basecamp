@@ -2,7 +2,6 @@ import { useState } from 'react';
 import MapPin from './MapPin.jsx';
 import WeatherStrip from './WeatherStrip.jsx';
 import SafetySection from './SafetySection.jsx';
-import PackingChecklist from './PackingChecklist.jsx';
 import { getDogNames } from '../utils/profile.js';
 import ShareModal from './ShareModal.jsx';
 import { trackEvent } from '../utils/analytics.js';
@@ -129,7 +128,7 @@ function EmailPlan({ trip, constraints }) {
         <span style={{ color: '#2c2416', fontWeight: 600, fontSize: 14 }}>Email this plan to yourself</span>
       </div>
       <p style={{ color: '#9c8b6e', fontSize: 13, margin: '0 0 12px', lineHeight: 1.5 }}>
-        Get the full trip plan — map coordinates, packing list, dog report — straight to your inbox.
+        Get the full trip plan — map coordinates, dog report, safety info — straight to your inbox.
       </p>
       <form onSubmit={handleSend} style={{ display: 'flex', gap: 8 }}>
         <input
@@ -211,7 +210,6 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
   const { trip, id, date, status } = entry;
   const [saved, setSaved] = useState(false);
   const [showShare, setShowShare] = useState(false);
-  const [checkedItems, setCheckedItems] = useState([]);
 
   function handleSave() {
     trackEvent('trip_saved');
@@ -357,15 +355,7 @@ export default function TripResult({ entry, onSave, onPlanAnother, onViewLog, re
         </Section>
       )}
 
-      {/* 6. ACTION ZONE — packing, email, alternative, buttons */}
-      {!readOnly && (
-        <PackingChecklist
-          trip={trip}
-          checked={checkedItems}
-          onCheckedChange={setCheckedItems}
-        />
-      )}
-
+      {/* 6. ACTION ZONE — email, alternative, buttons */}
       <EmailPlan trip={trip} constraints={entry.constraints} />
 
       {trip.alternativeOption?.name && (
