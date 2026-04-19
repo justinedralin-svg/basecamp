@@ -322,13 +322,20 @@ export default function PlanForm({ onComplete, onBack, prefill, onClearPrefill }
         {form.startingLocation.trim().length > 2 && (
           <div className="fade-in" style={{ background: 'rgba(92,122,62,0.06)', border: '1px solid rgba(92,122,62,0.2)', borderRadius: 10, padding: '14px 16px', marginBottom: 4 }}>
             <div style={{ color: '#5c7a3e', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>That's all we need 🐾</div>
-            <div style={{ color: '#9c8b6e', fontSize: 12, marginBottom: 12 }}>We'll fill in smart defaults for your rig and preferences — or keep going to customise.</div>
+            <div style={{ color: '#9c8b6e', fontSize: 12, marginBottom: 12 }}>We'll fill in smart defaults for your rig and preferences — or keep going for a better match.</div>
             <button
               type="button"
               onClick={quickSubmit}
               disabled={loading}
-              className="btn-primary"
-              style={{ width: '100%', padding: '13px', fontSize: 15 }}
+              style={{
+                width: '100%', padding: '13px', fontSize: 15,
+                background: 'transparent',
+                border: '1.5px solid #5c7a3e',
+                borderRadius: 10,
+                color: '#5c7a3e',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
             >
               🐾 Find my trip now →
             </button>
