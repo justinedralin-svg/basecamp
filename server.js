@@ -845,7 +845,7 @@ function buildUserPrompt(c) {
   }
 
   if (c.driveDistance) {
-    lines.push(`MAX DRIVE FROM HOME: ${c.driveDistance}`);
+    lines.push(`MAX DRIVE FROM HOME: ${c.driveDistance} — this is a hard limit, not a suggestion. Do not recommend a destination that requires a longer drive than this. If the best spots in the obvious direction are too far, pick a closer area instead.`);
   }
 
   if (c.weatherPrefs) {
