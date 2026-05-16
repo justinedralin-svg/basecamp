@@ -195,6 +195,39 @@ function cleanJSON(raw) {
   return out;
 }
 
+// Parse "Up to 2 hours", "2–3 hours", "3–4 hours" etc → max hours as a number
+function parseDriveDistanceHours(driveDistance) {
+  if (!driveDistance) return null;
+  const s = driveDistance.toLowerCase();
+  if (s.includes('willing') || s.includes('far')) return null; // no limit
+  // "up to 2 hours" → 2
+  const upTo = s.match(/up to (\d+(?:\.\d+)?)/);
+  if (upTo) return parseFloat(upTo[1]);
+  // "2–3 hours" or "2-3 hours" → 3 (upper bound)
+  const range = s.match(/(\d+(?:\.\d+)?)\s*[–-]\s*(\d+(?:\.\d+)?)/);
+  if (range) return parseFloat(range[2]);
+  // fallback: first number found
+  const single = s.match(/(\d+(?:\.\d+)?)/);
+  return single ? parseFloat(single[1]) : null;
+}
+
+// Parse "3 hours 15 min", "3.5 hours", "about 2h 30m" etc → hours as a number
+function parseDriveTimeHours(driveTime) {
+  if (!driveTime) return null;
+  const s = driveTime.toLowerCase();
+  let hours = 0;
+  const h = s.match(/(\d+(?:\.\d+)?)\s*h/);
+  const m = s.match(/(\d+)\s*m/);
+  if (h) hours += parseFloat(h[1]);
+  if (m) hours += parseInt(m[1]) / 60;
+  // plain "3.5 hours"
+  if (!h && !m) {
+    const plain = s.match(/(\d+(?:\.\d+)?)/);
+    if (plain) hours = parseFloat(plain[1]);
+  }
+  return hours || null;
+}
+
 app.post('/api/plan', rateLimit, async (req, res) => {
   const { constraints, changeRequest, originalTrip } = req.body;
 
@@ -260,6 +293,45 @@ app.post('/api/plan', rateLimit, async (req, res) => {
     if (!trip) {
       console.error('All JSON repair attempts failed. Raw snippet:', rawText.slice(0, 400));
       throw new Error('Could not parse trip JSON from response');
+    }
+
+    // ── Drive distance validation ──────────────────────────────────────────
+    // Parse the driveTime returned by the AI and compare to the user's max.
+    // If the AI cheated, retry once with a much harder constraint injected.
+    if (constraints.driveDistance && trip.driveTime && !changeRequest) {
+      const maxHours = parseDriveDistanceHours(constraints.driveDistance);
+      const actualHours = parseDriveTimeHours(trip.driveTime);
+
+      if (maxHours && actualHours && actualHours > maxHours + 0.25) {
+        console.log(`[drive-check] AI returned ${trip.driveTime} (${actualHours}h) but max is ${constraints.driveDistance} (${maxHours}h) — retrying`);
+
+        const stricterPrompt = buildUserPrompt(constraints) +
+          `\n\nCRITICAL CORRECTION: Your previous suggestion was too far away. ` +
+          `You MUST pick a destination reachable in ${constraints.driveDistance} or less. ` +
+          `Do not suggest anything beyond ${maxHours} hours of driving. Pick somewhere closer.`;
+
+        const retry = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': process.env.ANTHROPIC_API_KEY,
+            'anthropic-version': '2023-06-01',
+          },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-6',
+            max_tokens: 4096,
+            system: SYSTEM_PROMPT,
+            messages: [{ role: 'user', content: stricterPrompt }],
+          }),
+        });
+
+        if (retry.ok) {
+          const retryJson = await retry.json();
+          const retryText = retryJson.content[0].text.trim();
+          const retryTrip = attemptParse(retryText) || (() => { const m = retryText.match(/\{[\s\S]*\}/); return m ? attemptParse(m[0]) : null; })();
+          if (retryTrip) trip = retryTrip;
+        }
+      }
     }
 
     res.json({ trip });
